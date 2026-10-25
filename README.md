@@ -36,6 +36,26 @@ npm run tauri build    # build a Windows installer
 
 Built with [Tauri 2](https://tauri.app): a Rust backend with a web frontend.
 
+## Releasing
+
+Pushing a tag such as `v0.2.0` (or running it by hand) runs the Release workflow: it builds the
+Windows setup `.exe` with that version, signs it for the updater and publishes
+a GitHub Release with the installer and `latest.json`. The app's
+**Settings → Updates → Check now** reads that file from the latest release.
+
+One-time setup, since updates are signed:
+
+1. Generate a key pair: `npx tauri signer generate -w ~/.tauri/dynamic-peninsula.key`
+   (keep the private key safe; losing it means existing installs can't update).
+   Without a local checkout, run it in a GitHub Codespace on this repository.
+2. In the repository's **Settings → Secrets and variables → Actions**, add
+   - secret `TAURI_SIGNING_PRIVATE_KEY`: the contents of the private key file,
+   - secret `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`: its password (skip if none),
+   - variable `TAURI_UPDATER_PUBKEY`: the contents of the `.pub` file.
+
+Then release with `git tag v0.2.0 && git push origin v0.2.0`, or from the
+browser: **Actions → Release → Run workflow**, and enter the version.
+
 ## Roadmap
 
 The work is split into phases in [`PLAN.md`](PLAN.md) — window shell, then
