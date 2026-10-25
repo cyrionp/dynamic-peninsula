@@ -1,13 +1,14 @@
-// Settings page: theme, what the slim bar shows, clock format, sound and updates.
+// Settings page: theme and dark/light mode, what the slim bar shows, clock format, sound and updates.
 
 import { load, save } from "./store.js";
-import { THEMES, themeById } from "./themes.js";
+import { THEMES, MODES, themeById } from "./themes.js";
 import { setIconStyle, paintIcons } from "./icons.js";
 import { playChime } from "./sound.js";
 import { initUpdates, checkForUpdates, installUpdate, paintUpdates } from "./updates.js";
 
 const DEFAULTS = {
   theme: "lagoon",
+  mode: "dark",
   bar: "smart",
   clock24: true,
   sound: true,
@@ -23,7 +24,10 @@ export const BAR_MODES = [
   { id: "date", label: "Date & time" },
 ];
 
-let settings = { ...DEFAULTS, ...load("settings", {}) };
+const saved = load("settings", {});
+// Paper was the only light theme before modes existed; keep it light.
+if (!saved.mode && saved.theme === "paper") saved.mode = "light";
+let settings = { ...DEFAULTS, ...saved };
 let changed = () => {};
 
 export const getSettings = () => settings;
@@ -31,6 +35,7 @@ export const getSettings = () => settings;
 export function applyTheme() {
   const theme = themeById(settings.theme);
   document.documentElement.dataset.theme = theme.id;
+  document.documentElement.dataset.mode = settings.mode;
   setIconStyle(theme.icons);
 }
 
@@ -48,6 +53,9 @@ export function initSettings(onChange) {
   page.addEventListener("click", (e) => {
     const theme = e.target.closest("[data-theme-pick]");
     if (theme) return update({ theme: theme.dataset.themePick });
+
+    const mode = e.target.closest("[data-mode-pick]");
+    if (mode) return update({ mode: mode.dataset.modePick });
 
     const bar = e.target.closest("[data-bar]");
     if (bar) return update({ bar: bar.dataset.bar });
@@ -76,10 +84,15 @@ export function render() {
 
   page.innerHTML = `
     <h3>Theme</h3>
+    <div class="chips mode-chips">
+      ${MODES.map(
+        (m) => `<button class="chip ${m.id === settings.mode ? "is-active" : ""}" data-mode-pick="${m.id}">${m.label}</button>`
+      ).join("")}
+    </div>
     <div class="theme-grid">
       ${THEMES.map(
         (t) => `
-        <button class="theme-tile ${t.id === settings.theme ? "is-active" : ""}" data-theme="${t.id}" data-theme-pick="${t.id}" title="${t.blurb}">
+        <button class="theme-tile ${t.id === settings.theme ? "is-active" : ""}" data-theme="${t.id}" data-mode="${settings.mode}" data-theme-pick="${t.id}" title="${t.blurb}">
           <span class="tile-pill"><span class="dot"></span><i data-icon="media"></i></span>
           <span class="tile-name">${t.name}</span>
         </button>`

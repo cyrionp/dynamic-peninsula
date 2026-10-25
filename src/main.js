@@ -256,7 +256,7 @@ function onDataChange() {
 }
 
 function onSettingsChange(patch) {
-  if ("theme" in patch) {
+  if ("theme" in patch || "mode" in patch) {
     applyTheme();
     paintIcons();
     // Lists embed icons, so redraw them in the new style.
