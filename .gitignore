@@ -1,0 +1,16 @@
+# dependencies
+node_modules/
+
+# frontend build output
+dist/
+
+# Rust / Tauri build output
+src-tauri/target/
+
+# lockfiles are kept in git on purpose (package-lock.json, Cargo.lock)
+
+# editor / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

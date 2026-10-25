@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Dynamic Peninsula</title>
+    <link rel="stylesheet" href="/src/styles.css" />
+  </head>
+  <body>
+    <!-- The whole window is transparent; only .peninsula is painted. -->
+    <main id="stage" class="stage">
+      <div id="peninsula" class="peninsula" data-state="collapsed">
+        <!-- Collapsed: a slim pill with the clock -->
+        <div class="bar">
+          <span class="dot"></span>
+          <span id="clock" class="clock">--:--</span>
+        </div>
+
+        <!-- Expanded: the panels -->
+        <div class="panel">
+          <nav class="tabs" id="tabs">
+            <button class="tab is-active" data-page="timers">Timers</button>
+            <button class="tab" data-page="notes">Notes</button>
+            <button class="tab" data-page="todo">To-do</button>
+          </nav>
+
+          <section class="page is-active" data-page="timers">
+            <div class="row">
+              <strong>Stopwatches</strong>
+              <button class="mini" id="add-sw">+ Add</button>
+            </div>
+            <ul id="sw-list" class="list"></ul>
+          </section>
+
+          <section class="page" data-page="notes">
+            <div class="row"><strong>Quick note</strong></div>
+            <textarea id="note" class="note" placeholder="Jot something…"></textarea>
+          </section>
+
+          <section class="page" data-page="todo">
+            <div class="row">
+              <strong>To-do</strong>
+            </div>
+            <form id="todo-form" class="todo-form">
+              <input id="todo-input" class="todo-input" placeholder="Add a task and press Enter" />
+            </form>
+            <ul id="todo-list" class="list"></ul>
+          </section>
+        </div>
+      </div>
+    </main>
+
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
