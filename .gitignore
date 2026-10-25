@@ -6,6 +6,7 @@ dist/
 
 # Rust / Tauri build output
 src-tauri/target/
+src-tauri/gen/
 
 # lockfiles are kept in git on purpose (package-lock.json, Cargo.lock)
 

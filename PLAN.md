@@ -71,13 +71,13 @@ dynamic-peninsula/
 ## 3. Faz 0 — İskelet (önce bu)
 Amaç: tepede duran yarımada penceresi + tray ikonu + boş sekmeler, derlenip çalışsın.
 
-- [ ] `npm create tauri-app` yerine dosyaları elle kur (kontrol için) VEYA Tauri v2 CLI ile kur, sonra aşağıdaki ayarlara çek.
-- [ ] `tauri.conf.json` penceresi: `decorations:false`, `transparent:true`, `alwaysOnTop:true`, `skipTaskbar:true`, `resizable:false`, `shadow:false`, boyut ~460x300.
-- [ ] Başlangıçta Rust'ta pencereyi **üst-orta**ya konumla (birincil monitör genişliğini al, `LogicalPosition((w-460)/2, 0)`).
-- [ ] Tray ikonu + menü: `Show`, `Exit`. (`TrayIconBuilder`, `Menu`, `MenuItem`.)
-- [ ] Frontend: `data-state="collapsed|expanded"`, mouseenter'da genişle, mouseleave'de daralt (CSS geçişiyle).
-- [ ] İkonlar: `src-tauri/icons/` içine 32x32.png, 128x128.png, 128x128@2x.png, icon.ico, icon.png koy.
-- [ ] `cargo` bağımlılıkları: `tauri = { version = "2", features = ["tray-icon"] }`, `serde`, `serde_json`.
+- [x] `npm create tauri-app` yerine dosyaları elle kur (kontrol için) VEYA Tauri v2 CLI ile kur, sonra aşağıdaki ayarlara çek.
+- [x] `tauri.conf.json` penceresi: `decorations:false`, `transparent:true`, `alwaysOnTop:true`, `skipTaskbar:true`, `resizable:false`, `shadow:false`, boyut ~460x300.
+- [x] Başlangıçta Rust'ta pencereyi **üst-orta**ya konumla (birincil monitör genişliğini al, `LogicalPosition((w-460)/2, 0)`).
+- [x] Tray ikonu + menü: `Show`, `Exit`. (`TrayIconBuilder`, `Menu`, `MenuItem`.)
+- [x] Frontend: `data-state="collapsed|expanded"`, mouseenter'da genişle, mouseleave'de daralt (CSS geçişiyle).
+- [x] İkonlar: `src-tauri/icons/` içine 32x32.png, 128x128.png, 128x128@2x.png, icon.ico, icon.png koy.
+- [x] `cargo` bağımlılıkları: `tauri = { version = "2", features = ["tray-icon"] }`, `serde`, `serde_json`.
 
 **Çıktı:** Setup kurulunca ekranın tepesinde bir pil görünür, hover'da açılır.
 

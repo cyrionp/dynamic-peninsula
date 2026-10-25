@@ -3,8 +3,9 @@
 A small, open-source companion that hangs from the top edge of your Windows
 screen. Hover it and it opens; move away and it tucks itself back in.
 
-> **Status: early work in progress.** The frontend shell and icons are in place.
-> The Rust backend, persistence and media control are still being built —
+> **Status: early work in progress.** The window shell (top-center, transparent,
+> always on top) and tray icon work. Persistence and media control are still
+> being built —
 > see [`PLAN.md`](PLAN.md) for the roadmap.
 
 ## Planned features
