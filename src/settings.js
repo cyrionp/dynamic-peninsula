@@ -1,9 +1,10 @@
-// Settings page: theme, what the slim bar shows, clock format and sound.
+// Settings page: theme, what the slim bar shows, clock format, sound and updates.
 
 import { load, save } from "./store.js";
 import { THEMES, themeById } from "./themes.js";
 import { setIconStyle, paintIcons } from "./icons.js";
 import { playChime } from "./sound.js";
+import { initUpdates, checkForUpdates, installUpdate, paintUpdates } from "./updates.js";
 
 const DEFAULTS = {
   theme: "lagoon",
@@ -52,6 +53,8 @@ export function initSettings(onChange) {
     if (bar) return update({ bar: bar.dataset.bar });
 
     if (e.target.closest("#test-sound")) playChime(settings.volume);
+    if (e.target.closest("#check-updates")) checkForUpdates();
+    if (e.target.closest("#install-update")) installUpdate();
   });
 
   page.addEventListener("change", (e) => {
@@ -64,6 +67,7 @@ export function initSettings(onChange) {
   });
 
   render();
+  initUpdates();
 }
 
 export function render() {
@@ -106,7 +110,11 @@ export function render() {
       <input type="range" id="set-volume" min="0.1" max="1" step="0.1" value="${settings.volume}" />
       <button class="mini" id="test-sound">Test</button>
     </div>
+
+    <h3>Updates</h3>
+    <div id="updates-box"></div>
   `;
+  paintUpdates();
 
   // Each tile previews its own theme's icon style.
   for (const tile of page.querySelectorAll(".theme-tile")) {

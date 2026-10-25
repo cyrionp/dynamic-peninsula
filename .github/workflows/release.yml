@@ -1,0 +1,92 @@
+name: Release
+
+# Push a tag like `v0.2.0` to publish a GitHub Release with the Windows
+# setup .exe and the `latest.json` the in-app update check reads.
+# The version comes from the tag, so nothing needs bumping by hand.
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: bash
+    env:
+      TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+      TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+      UPDATER_PUBKEY: ${{ vars.TAURI_UPDATER_PUBKEY }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check signing setup
+        run: |
+          if [ -z "$TAURI_SIGNING_PRIVATE_KEY" ] || [ -z "$UPDATER_PUBKEY" ]; then
+            echo "::error::Add the TAURI_SIGNING_PRIVATE_KEY secret and the TAURI_UPDATER_PUBKEY variable (see README)."
+            exit 1
+          fi
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: swatinem/rust-cache@v2
+        with:
+          workspaces: "./src-tauri -> target"
+
+      - run: npm ci
+
+      # Release-only config: the tag's version, the updater's public key and
+      # signed updater artifacts (the .exe plus its .sig).
+      - name: Write release config
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+          node -e '
+            const [version, pubkey] = process.argv.slice(1);
+            const config = {
+              version,
+              bundle: { createUpdaterArtifacts: true },
+              plugins: { updater: { pubkey } },
+            };
+            require("fs").writeFileSync("release.conf.json", JSON.stringify(config));
+          ' "$VERSION" "$UPDATER_PUBKEY"
+
+      - run: |
+          rm -rf src-tauri/target/release/bundle
+          npm run tauri build -- --config release.conf.json
+
+      - name: Collect installer and latest.json
+        run: |
+          mkdir out
+          SETUP="Dynamic-Peninsula_${VERSION}_x64-setup.exe"
+          cp src-tauri/target/release/bundle/nsis/*-setup.exe "out/$SETUP"
+          URL="https://github.com/${GITHUB_REPOSITORY}/releases/download/${GITHUB_REF_NAME}/${SETUP}"
+          node -e '
+            const fs = require("fs");
+            const [version, url, sigFile] = process.argv.slice(1);
+            const manifest = {
+              version,
+              pub_date: new Date().toISOString(),
+              platforms: {
+                "windows-x86_64": { url, signature: fs.readFileSync(sigFile, "utf8").trim() },
+              },
+            };
+            fs.writeFileSync("out/latest.json", JSON.stringify(manifest, null, 2));
+          ' "$VERSION" "$URL" src-tauri/target/release/bundle/nsis/*-setup.exe.sig
+          cat out/latest.json
+
+      - name: Publish release
+        run: |
+          gh release create "$GITHUB_REF_NAME" out/* \
+            --title "Dynamic Peninsula $VERSION" \
+            --generate-notes
