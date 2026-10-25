@@ -34,7 +34,7 @@
             <button class="tab" data-page="media"><i data-icon="media"></i><span>Media</span></button>
             <button class="tab" data-page="timers"><i data-icon="stopwatch"></i><span>Stopwatch</span></button>
             <button class="tab" data-page="countdowns"><i data-icon="countdown"></i><span>Countdown</span></button>
-            <button class="tab" data-page="notes"><i data-icon="note"></i><span>Note</span></button>
+            <button class="tab" data-page="notes"><i data-icon="note"></i><span>Notes</span></button>
             <button class="tab" data-page="todo"><i data-icon="todo"></i><span>To-do</span></button>
             <button class="tab" data-page="settings"><i data-icon="settings"></i><span>Settings</span></button>
           </nav>
@@ -70,7 +70,13 @@
           </section>
 
           <section class="page" data-page="notes">
-            <textarea id="note" class="note" placeholder="Jot something… it saves as you type." spellcheck="false"></textarea>
+            <div class="notes">
+              <div class="note-side">
+                <button class="mini" id="note-add"><i data-icon="plus"></i>New note</button>
+                <ul id="note-list" class="list note-list"></ul>
+              </div>
+              <textarea id="note" class="note" placeholder="Jot something… it saves as you type." spellcheck="false"></textarea>
+            </div>
           </section>
 
           <section class="page" data-page="todo">

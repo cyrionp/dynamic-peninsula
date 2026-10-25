@@ -10,13 +10,14 @@ import { formatClock, formatElapsedShort, formatRemaining, escapeHtml } from "./
 import { initSettings, applyTheme, getSettings, render as renderSettings } from "./settings.js";
 import * as stopwatches from "./stopwatches.js";
 import * as countdowns from "./countdowns.js";
-import { initMedia, media, prettySource, render as renderMedia } from "./media.js";
-import { initNotes, initTodos, renderTodos } from "./lists.js";
+import { initMedia, media, prettySource, coverHtml, guardCovers, render as renderMedia } from "./media.js";
+import { initNotes, renderNotes, initTodos, renderTodos } from "./lists.js";
 
 const peninsula = document.getElementById("peninsula");
 const barLead = document.getElementById("bar-lead");
 const barText = document.getElementById("bar-text");
 const barValue = document.getElementById("bar-value");
+guardCovers(barLead);
 
 let page = load("tab", "media");
 
@@ -119,7 +120,7 @@ function mediaView(onlyPlaying) {
   const m = media();
   if (!m.hasSession || (onlyPlaying && !m.playing)) return null;
   return {
-    lead: m.thumbnail ? { cover: m.thumbnail } : "media",
+    lead: { cover: m.thumbnail || null },
     text: [m.title, m.artist].filter(Boolean).join(" · ") || prettySource(m.source),
     value: "",
     playing: m.playing,
@@ -148,7 +149,7 @@ let lastText = null;
 // Only touches the DOM for what actually changed.
 function paintBar(force = false) {
   const view = barView();
-  const leadKey = typeof view.lead === "string" ? view.lead : view.lead.cover;
+  const leadKey = typeof view.lead === "string" ? view.lead : `cover:${view.lead.cover}`;
   if (force || leadKey !== lastLead) {
     lastLead = leadKey;
     barLead.innerHTML =
@@ -156,7 +157,7 @@ function paintBar(force = false) {
         ? `<span class="dot"></span>`
         : typeof view.lead === "string"
           ? icon(view.lead)
-          : `<img src="${view.lead.cover}" alt="" />`;
+          : coverHtml(view.lead.cover, "lead-cover");
   }
   if (force || view.text !== lastText) {
     lastText = view.text;
@@ -262,6 +263,7 @@ function onSettingsChange(patch) {
     // Lists embed icons, so redraw them in the new style.
     stopwatches.render();
     countdowns.render();
+    renderNotes();
     renderTodos();
     renderMedia();
     renderSettings();

@@ -11,6 +11,30 @@ let changed = () => {};
 
 export const media = () => state;
 
+// Shown when a player shares no artwork, or the artwork fails to load: a
+// music note on the theme's accent, so it always matches the current theme.
+const NOTE_ART = `<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M9 17.5a3 3 0 1 1-2-2.83V5.5l12-2.5v11.5a3 3 0 1 1-2-2.83V7.6l-8 1.66z"/></svg>`;
+
+/** Artwork, or the default art when there is none. `cls` sizes it. */
+export function coverHtml(src, cls) {
+  return src
+    ? `<img class="${cls}" src="${src}" alt="" />`
+    : `<span class="${cls} cover-default">${NOTE_ART}</span>`;
+}
+
+/** Swaps any artwork under `root` that fails to load for the default art. */
+export function guardCovers(root) {
+  root.addEventListener(
+    "error",
+    (e) => {
+      const img = e.target;
+      if (img.tagName !== "IMG") return;
+      img.outerHTML = coverHtml(null, img.className);
+    },
+    true
+  );
+}
+
 /** "SpotifyAB.SpotifyMusic_zpdnekdrzrea0!Spotify" → "Spotify". */
 export function prettySource(id = "") {
   const last = id.split("!").pop().replace(/\.exe$/i, "");
@@ -21,6 +45,7 @@ export function prettySource(id = "") {
 export async function initMedia(onChange) {
   changed = onChange;
   pageEl = document.getElementById("media-page");
+  guardCovers(pageEl);
 
   pageEl.addEventListener("click", (e) => {
     const btn = e.target.closest("button[data-media]");
@@ -57,13 +82,9 @@ export function render() {
     return;
   }
 
-  const cover = state.thumbnail
-    ? `<img class="cover" src="${state.thumbnail}" alt="" />`
-    : `<div class="cover cover-blank">${icon("media")}</div>`;
-
   pageEl.innerHTML = `
     <div class="media-card">
-      ${cover}
+      ${coverHtml(state.thumbnail, "cover")}
       <div class="media-info">
         <span class="media-source">${escapeHtml(prettySource(state.source))}</span>
         <strong class="media-title">${escapeHtml(state.title || "Unknown title")}</strong>
