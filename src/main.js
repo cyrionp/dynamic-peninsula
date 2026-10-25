@@ -12,6 +12,7 @@ import * as stopwatches from "./stopwatches.js";
 import * as countdowns from "./countdowns.js";
 import { initMedia, media, prettySource, render as renderMedia } from "./media.js";
 import { initNotes, initTodos, renderTodos } from "./lists.js";
+import { initLayout } from "./layout.js";
 
 const peninsula = document.getElementById("peninsula");
 const barLead = document.getElementById("bar-lead");
@@ -277,6 +278,16 @@ countdowns.initCountdowns(onDataChange);
 initNotes();
 initTodos();
 initMedia(() => paintBar());
+initLayout({
+  onLayout: reportHitRect,
+  // Locked: it can't be hovered any more, so fold it away.
+  onLock(locked) {
+    if (!locked || state() !== "expanded") return;
+    hovering = false;
+    document.activeElement?.blur();
+    setState("collapsed");
+  },
+});
 showPage(page);
 paintBar(true);
 scheduleClock();
