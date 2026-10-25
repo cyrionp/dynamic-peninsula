@@ -14,8 +14,8 @@
       {
         "label": "main",
         "title": "Dynamic Peninsula",
-        "width": 460,
-        "height": 300,
+        "width": 520,
+        "height": 360,
         "decorations": false,
         "transparent": true,
         "alwaysOnTop": true,
