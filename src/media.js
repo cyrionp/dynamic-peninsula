@@ -1,0 +1,78 @@
+// "Now playing" page. The Rust side pushes updates as they happen; this
+// module only renders them and forwards button presses.
+
+import { call, on, inTauri } from "./tauri.js";
+import { icon } from "./icons.js";
+import { escapeHtml } from "./util.js";
+
+let state = { available: false, hasSession: false };
+let pageEl = null;
+let changed = () => {};
+
+export const media = () => state;
+
+/** "SpotifyAB.SpotifyMusic_zpdnekdrzrea0!Spotify" → "Spotify". */
+export function prettySource(id = "") {
+  const last = id.split("!").pop().replace(/\.exe$/i, "");
+  const known = { msedge: "Edge", chrome: "Chrome", firefox: "Firefox", spotify: "Spotify" };
+  return known[last.toLowerCase()] ?? last.split(/[._]/)[0];
+}
+
+export async function initMedia(onChange) {
+  changed = onChange;
+  pageEl = document.getElementById("media-page");
+
+  pageEl.addEventListener("click", (e) => {
+    const btn = e.target.closest("button[data-media]");
+    if (!btn) return;
+    call("media_control", { action: btn.dataset.media }).catch(() => {});
+    // Feel instant; the real state follows from the event.
+    if (btn.dataset.media === "toggle") {
+      state = { ...state, playing: !state.playing };
+      render();
+      changed();
+    }
+  });
+
+  render();
+  if (!inTauri) return;
+  await on("media://update", (next) => {
+    state = next;
+    render();
+    changed();
+  });
+  state = (await call("media_state")) ?? state;
+  render();
+  changed();
+}
+
+export function render() {
+  if (!pageEl) return;
+  if (!state.available) {
+    pageEl.innerHTML = `<div class="media-empty">${icon("media")}<p>Media controls work on Windows.</p></div>`;
+    return;
+  }
+  if (!state.hasSession) {
+    pageEl.innerHTML = `<div class="media-empty">${icon("media")}<p>Nothing is playing.</p><small>Start music in Spotify, a browser or any player.</small></div>`;
+    return;
+  }
+
+  const cover = state.thumbnail
+    ? `<img class="cover" src="${state.thumbnail}" alt="" />`
+    : `<div class="cover cover-blank">${icon("media")}</div>`;
+
+  pageEl.innerHTML = `
+    <div class="media-card">
+      ${cover}
+      <div class="media-info">
+        <span class="media-source">${escapeHtml(prettySource(state.source))}</span>
+        <strong class="media-title">${escapeHtml(state.title || "Unknown title")}</strong>
+        <span class="media-artist">${escapeHtml(state.artist || "")}</span>
+        <div class="media-controls">
+          <button class="icon-btn big" data-media="previous" title="Previous">${icon("previous")}</button>
+          <button class="icon-btn big accent play" data-media="toggle" title="${state.playing ? "Pause" : "Play"}">${icon(state.playing ? "pause" : "play")}</button>
+          <button class="icon-btn big" data-media="next" title="Next">${icon("next")}</button>
+        </div>
+      </div>
+    </div>`;
+}

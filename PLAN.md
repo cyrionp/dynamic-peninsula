@@ -91,14 +91,16 @@ Amaç: tepede duran yarımada penceresi + tray ikonu + boş sekmeler, derlenip �
 ## 4. Faz 1 — Çoklu kronometre (mimari kanıtı)
 Tamamen frontend'de tutulabilir (sistem API'si yok), mimariyi test etmek için ideal.
 
-- [ ] "Timers" sekmesinde kronometre listesi; `+ Add` ile yeni ekle.
-- [ ] Her biri: geçen süre (mm:ss.cs), Start/Pause, Reset, Sil.
-- [ ] `requestAnimationFrame` yerine 1 kronometre çalışırken `setInterval(…, 50)` yeterli; hepsi dururken interval'i kapat (boşta CPU=0 ilkesi).
-- [ ] İsteğe bağlı: kapanışta çalışan kronometreleri `localStorage`/dosyaya kaydet.
+- [x] "Timers" sekmesinde kronometre listesi; `+ Add` ile yeni ekle.
+- [x] Her biri: geçen süre (mm:ss.cs), Start/Pause, Reset, Sil.
+- [x] `requestAnimationFrame` yerine 1 kronometre çalışırken `setInterval(…, 50)` yeterli; hepsi dururken interval'i kapat (boşta CPU=0 ilkesi).
+- [x] İsteğe bağlı: kapanışta çalışan kronometreleri `localStorage`/dosyaya kaydet.
 
 ---
 
 ## 5. Faz 2 — Kalıcılık + Notlar + To-do
+> Ara çözüm: notlar, to-do, kronometreler, geri sayımlar ve ayarlar şimdilik WebView `localStorage`'da (yine yalnızca bu bilgisayarda).
+
 - [ ] Rust tarafında bir veri katmanı: `rusqlite` ile `app_data_dir`/`data.db`.
       (Tauri v2'de `app.path().app_data_dir()`.)
 - [ ] Tauri `#[tauri::command]` ile frontend↔Rust köprüsü: `notes_get/set`, `todos_list/add/toggle/delete`.
@@ -108,29 +110,33 @@ Tamamen frontend'de tutulabilir (sistem API'si yok), mimariyi test etmek için i
 ---
 
 ## 6. Faz 3 — Geri sayımlar
-- [ ] **Süreli geri sayım:** dakika/saniye gir, başlat → yarımadada canlı sayım; bitince bildirim + ince ses.
-- [ ] **Saate kadar geri sayım:** hedef saat seç (ör. 18:30); kalan süreyi göster, geçmişse ertesi güne say ya da uyar.
+- [x] **Süreli geri sayım:** dakika/saniye gir, başlat → yarımadada canlı sayım; bitince bildirim + ince ses.
+- [x] **Saate kadar geri sayım:** hedef saat seç (ör. 18:30); kalan süreyi göster, geçmişse ertesi güne say ya da uyar.
 - [ ] Bildirim: `tauri-plugin-notification` (v2). Ses için küçük bir wav frontend'de `Audio`.
-- [ ] Sayım yokken timer durmalı.
+      (Şimdilik: yarımada içinde animasyonlu uyarı + Web Audio ile üretilen kısa çan sesi; sistem bildirimi henüz yok.)
+- [x] Sayım yokken timer durmalı.
 
 ---
 
 ## 7. Faz 4 — Medya yönetimi (en sistemsel kısım)
 Windows "now playing" için **GSMTC** kullan.
 
-- [ ] `windows` crate (features: `Media_Control`, `Foundation`) ile
+- [x] `windows` crate (features: `Media_Control`, `Foundation`) ile
       `GlobalSystemMediaTransportControlsSessionManager::RequestAsync`.
-- [ ] Aktif oturumdan: başlık, sanatçı, oynatma durumu, (varsa) kapak.
-- [ ] Kontroller: `TryPlayAsync/TryPauseAsync/TrySkipNextAsync/TrySkipPreviousAsync`.
-- [ ] Değişimleri olayla dinle (polling yerine `MediaPropertiesChanged`/`PlaybackInfoChanged`),
+- [x] Aktif oturumdan: başlık, sanatçı, oynatma durumu, (varsa) kapak.
+- [x] Kontroller: `TryPlayAsync/TryPauseAsync/TrySkipNextAsync/TrySkipPreviousAsync`.
+- [x] Değişimleri olayla dinle (polling yerine `MediaPropertiesChanged`/`PlaybackInfoChanged`),
       frontend'e `emit` ile gönder.
-- [ ] Yarımada kapalıyken parça adını kısa göster; açıkken kontrol butonları.
+- [x] Yarımada kapalıyken parça adını kısa göster; açıkken kontrol butonları.
 
 > Not: Lyrics/şarkı sözü istersen sonraki sürümde LRCLIB (lrclib.net) eklenebilir — v1'de şart değil.
 
 ---
 
 ## 8. Faz 5 — Cila
+- [x] 5 tema (Lagoon, Ember, Paper, Terminal, Aurora): renk, font, şekil ve ikon stili; Ayarlar'dan anında değişir.
+- [x] Ayarlar: ince çubukta ne gösterileceği (Smart / Now playing / Countdown / Stopwatch / Clock / Date & time), 24 saat, ses.
+- [x] Şeffaf alanda tıklamalar alttaki uygulamaya geçer (`set_ignore_cursor_events`).
 - [ ] Ayarlar: "Start with Windows" (`tauri-plugin-autostart`), yarımada boyutu, tema.
 - [ ] Tam ekran uygulamada gizlenme.
 - [ ] Global kısayol (`tauri-plugin-global-shortcut`) ile aç/kapat.

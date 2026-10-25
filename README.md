@@ -3,20 +3,24 @@
 A small, open-source companion that hangs from the top edge of your Windows
 screen. Hover it and it opens; move away and it tucks itself back in.
 
-> **Status: early work in progress.** The window shell (top-center, transparent,
-> always on top) and tray icon work. Persistence and media control are still
-> being built —
+> **Status: early work in progress.** Media controls, named stopwatches and
+> countdowns, notes, to-dos, settings and five themes work. Still to come:
+> system notifications, start with Windows and other polish —
 > see [`PLAN.md`](PLAN.md) for the roadmap.
 
-## Planned features
+## Features
 
 - **Media controls** — see what's playing and play / pause / skip, from any
   player Windows knows about (Spotify, Apple Music, browsers).
 - **Quick notes** — one box, saved as you type.
 - **To-do list** — add, tick off, delete.
-- **Countdown** — set a duration and watch it run down.
-- **Countdown to a time** — "how long until 18:30".
-- **Multiple stopwatches** — several independent timers at once.
+- **Countdowns** — as many as you like, each with a name: either a length
+  ("25 minutes") or a clock time ("until 18:30"). When one ends the
+  peninsula drops down, rings and plays a short chime.
+- **Stopwatches** — several independent, named stopwatches at once.
+- **Settings & themes** — pick what the slim bar shows (smart, now playing,
+  countdown, stopwatch, clock, date) and one of five themes: Lagoon, Ember,
+  Paper, Terminal and Aurora.
 
 No accounts, no tracking. Everything is stored on your own computer.
 

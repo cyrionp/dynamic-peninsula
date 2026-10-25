@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="lagoon">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -10,42 +10,77 @@
     <!-- The whole window is transparent; only .peninsula is painted. -->
     <main id="stage" class="stage">
       <div id="peninsula" class="peninsula" data-state="collapsed">
-        <!-- Collapsed: a slim pill with the clock -->
-        <div class="bar">
-          <span class="dot"></span>
-          <span id="clock" class="clock">--:--</span>
+        <!-- Always visible: the slim bar. What it shows is chosen in Settings. -->
+        <div class="bar" id="bar">
+          <span class="bar-lead" id="bar-lead"><span class="dot"></span></span>
+          <span class="bar-text" id="bar-text"></span>
+          <span class="bar-value" id="bar-value"></span>
+        </div>
+
+        <!-- Shown when a countdown ends. -->
+        <div class="alert" id="alert">
+          <span class="alert-bell" data-icon="bell"></span>
+          <div class="alert-text">
+            <small>Time's up</small>
+            <strong id="alert-name"></strong>
+          </div>
+          <button class="mini" id="alert-restart">Restart</button>
+          <button class="icon-btn" id="alert-dismiss" title="Dismiss" data-icon="close"></button>
         </div>
 
         <!-- Expanded: the panels -->
         <div class="panel">
           <nav class="tabs" id="tabs">
-            <button class="tab is-active" data-page="timers">Timers</button>
-            <button class="tab" data-page="notes">Notes</button>
-            <button class="tab" data-page="todo">To-do</button>
+            <button class="tab" data-page="media"><i data-icon="media"></i><span>Media</span></button>
+            <button class="tab" data-page="timers"><i data-icon="stopwatch"></i><span>Stopwatch</span></button>
+            <button class="tab" data-page="countdowns"><i data-icon="countdown"></i><span>Countdown</span></button>
+            <button class="tab" data-page="notes"><i data-icon="note"></i><span>Note</span></button>
+            <button class="tab" data-page="todo"><i data-icon="todo"></i><span>To-do</span></button>
+            <button class="tab" data-page="settings"><i data-icon="settings"></i><span>Settings</span></button>
           </nav>
 
-          <section class="page is-active" data-page="timers">
+          <section class="page" data-page="media" id="media-page"></section>
+
+          <section class="page" data-page="timers">
             <div class="row">
               <strong>Stopwatches</strong>
-              <button class="mini" id="add-sw">+ Add</button>
+              <button class="mini" id="add-sw"><i data-icon="plus"></i>Add</button>
             </div>
             <ul id="sw-list" class="list"></ul>
           </section>
 
+          <section class="page" data-page="countdowns">
+            <form id="cd-form" class="cd-form" data-mode="duration" autocomplete="off">
+              <input name="name" class="field cd-name" placeholder="Name" spellcheck="false" />
+              <div class="seg">
+                <button type="button" data-mode="duration" class="is-active">For</button>
+                <button type="button" data-mode="until">Until</button>
+              </div>
+              <div class="cd-duration">
+                <input name="h" class="field num" type="number" min="0" max="99" placeholder="h" />
+                <input name="m" class="field num" type="number" min="0" max="59" placeholder="m" value="5" />
+                <input name="s" class="field num" type="number" min="0" max="59" placeholder="s" />
+              </div>
+              <div class="cd-until">
+                <input name="until" class="field" type="time" value="18:30" />
+              </div>
+              <button class="icon-btn accent" type="submit" title="Add countdown" data-icon="plus"></button>
+            </form>
+            <ul id="cd-list" class="list"></ul>
+          </section>
+
           <section class="page" data-page="notes">
-            <div class="row"><strong>Quick note</strong></div>
-            <textarea id="note" class="note" placeholder="Jot something…"></textarea>
+            <textarea id="note" class="note" placeholder="Jot something… it saves as you type." spellcheck="false"></textarea>
           </section>
 
           <section class="page" data-page="todo">
-            <div class="row">
-              <strong>To-do</strong>
-            </div>
             <form id="todo-form" class="todo-form">
-              <input id="todo-input" class="todo-input" placeholder="Add a task and press Enter" />
+              <input id="todo-input" class="field" placeholder="Add a task and press Enter" />
             </form>
             <ul id="todo-list" class="list"></ul>
           </section>
+
+          <section class="page settings" data-page="settings" id="settings-page"></section>
         </div>
       </div>
     </main>
