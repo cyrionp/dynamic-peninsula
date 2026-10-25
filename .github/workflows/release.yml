@@ -1,12 +1,18 @@
 name: Release
 
-# Push a tag like `v0.2.0` to publish a GitHub Release with the Windows
-# setup .exe and the `latest.json` the in-app update check reads.
-# The version comes from the tag, so nothing needs bumping by hand.
+# Push a tag like `v0.2.0`, or run this workflow from the Actions tab with a
+# version, to publish a GitHub Release with the Windows setup .exe and the
+# `latest.json` the in-app update check reads. The version comes from the
+# tag, so nothing needs bumping by hand.
 
 on:
   push:
     tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version to release, e.g. 0.2.0 (tagged as v0.2.0)"
+        required: true
 
 permissions:
   contents: write
@@ -22,6 +28,7 @@ jobs:
       TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
       UPDATER_PUBKEY: ${{ vars.TAURI_UPDATER_PUBKEY }}
       GH_TOKEN: ${{ github.token }}
+      INPUT_VERSION: ${{ inputs.version }}
     steps:
       - uses: actions/checkout@v4
 
@@ -49,7 +56,9 @@ jobs:
       # signed updater artifacts (the .exe plus its .sig).
       - name: Write release config
         run: |
-          VERSION="${GITHUB_REF_NAME#v}"
+          if [ -n "$INPUT_VERSION" ]; then TAG="v${INPUT_VERSION#v}"; else TAG="$GITHUB_REF_NAME"; fi
+          VERSION="${TAG#v}"
+          echo "TAG=$TAG" >> "$GITHUB_ENV"
           echo "VERSION=$VERSION" >> "$GITHUB_ENV"
           node -e '
             const [version, pubkey] = process.argv.slice(1);
@@ -70,7 +79,7 @@ jobs:
           mkdir out
           SETUP="Dynamic-Peninsula_${VERSION}_x64-setup.exe"
           cp src-tauri/target/release/bundle/nsis/*-setup.exe "out/$SETUP"
-          URL="https://github.com/${GITHUB_REPOSITORY}/releases/download/${GITHUB_REF_NAME}/${SETUP}"
+          URL="https://github.com/${GITHUB_REPOSITORY}/releases/download/${TAG}/${SETUP}"
           node -e '
             const fs = require("fs");
             const [version, url, sigFile] = process.argv.slice(1);
@@ -87,6 +96,8 @@ jobs:
 
       - name: Publish release
         run: |
-          gh release create "$GITHUB_REF_NAME" out/* \
+          # Creates the tag on this commit when the run was started by hand.
+          gh release create "$TAG" out/* \
+            --target "$GITHUB_SHA" \
             --title "Dynamic Peninsula $VERSION" \
             --generate-notes
