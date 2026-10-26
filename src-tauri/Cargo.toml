@@ -35,6 +35,8 @@ base64 = "0.22"
 # Update check against the latest GitHub Release, and restarting afterwards.
 tauri-plugin-process = "2"
 tauri-plugin-updater = "2"
+# Optional "launch at startup" (a Run registry entry on Windows).
+tauri-plugin-autostart = "2"
 
 [profile.release]
 codegen-units = 1

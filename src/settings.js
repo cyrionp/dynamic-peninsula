@@ -1,5 +1,5 @@
 // Settings page: theme and dark/light mode, what the slim bar shows, size and
-// look, clock format, sound and updates.
+// look, clock format, sound, startup and updates.
 
 import { load, save } from "./store.js";
 import { THEMES, MODES, themeById } from "./themes.js";
@@ -7,6 +7,7 @@ import { setIconStyle, paintIcons } from "./icons.js";
 import { playChime } from "./sound.js";
 import { initUpdates, checkForUpdates, installUpdate, paintUpdates } from "./updates.js";
 import { paintLayout } from "./layout.js";
+import { inTauri } from "./tauri.js";
 
 const DEFAULTS = {
   theme: "lagoon",
@@ -31,6 +32,38 @@ const saved = load("settings", {});
 if (!saved.mode && saved.theme === "paper") saved.mode = "light";
 let settings = { ...DEFAULTS, ...saved };
 let changed = () => {};
+
+// Launch at startup lives in the OS (a Run registry entry on Windows), not in
+// our settings, so it is read from and written to the autostart plugin.
+// null until known; stays null outside Tauri.
+let autostart = null;
+
+async function autostartApi() {
+  return inTauri ? import("@tauri-apps/plugin-autostart") : null;
+}
+
+async function loadAutostart() {
+  const api = await autostartApi();
+  if (!api) return;
+  try {
+    autostart = await api.isEnabled();
+  } catch {
+    autostart = null;
+  }
+  render();
+}
+
+async function setAutostart(on) {
+  const api = await autostartApi();
+  if (!api) return;
+  try {
+    await (on ? api.enable() : api.disable());
+    autostart = await api.isEnabled();
+  } catch {
+    // leave the switch showing the real state
+  }
+  render();
+}
 
 export const getSettings = () => settings;
 
@@ -70,6 +103,7 @@ export function initSettings(onChange) {
   page.addEventListener("change", (e) => {
     if (e.target.id === "set-24h") update({ clock24: e.target.checked });
     if (e.target.id === "set-sound") update({ sound: e.target.checked });
+    if (e.target.id === "set-autostart") setAutostart(e.target.checked);
     if (e.target.id === "set-volume") {
       update({ volume: Number(e.target.value) });
       playChime(settings.volume);
@@ -78,6 +112,7 @@ export function initSettings(onChange) {
 
   render();
   initUpdates();
+  loadAutostart();
 }
 
 export function render() {
@@ -127,6 +162,13 @@ export function render() {
       <input type="range" id="set-volume" min="0.1" max="1" step="0.1" value="${settings.volume}" />
       <button class="mini" id="test-sound">Test</button>
     </div>
+
+    <h3>Startup</h3>
+    <label class="switch-row">
+      <span>Launch when the computer starts</span>
+      <input type="checkbox" class="switch" id="set-autostart" ${autostart ? "checked" : ""} ${autostart === null ? "disabled" : ""} />
+    </label>
+    ${autostart === null && !inTauri ? `<p class="hint">Available in the desktop app.</p>` : ""}
 
     <h3>Updates</h3>
     <div id="updates-box"></div>

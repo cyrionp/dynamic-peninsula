@@ -11,8 +11,10 @@ screen. Hover it and it opens; move away and it tucks itself back in.
 ## Features
 
 - **Media controls** — see what's playing and play / pause / skip, from any
-  player Windows knows about (Spotify, Apple Music, browsers).
-- **Quick notes** — one box, saved as you type.
+  player Windows knows about (Spotify, Apple Music, browsers). When a player
+  shares no artwork, a music-note cover in the theme's colours stands in.
+- **Notes** — as many as you like, titled by their first line and saved as
+  you type.
 - **To-do list** — add, tick off, delete.
 - **Countdowns** — as many as you like, each with a name: either a length
   ("25 minutes") or a clock time ("until 18:30"). When one ends the
@@ -23,6 +25,7 @@ screen. Hover it and it opens; move away and it tucks itself back in.
   pill look and its opacity. **Lock** it from Settings and it ignores the
   mouse entirely, so you can click the windows underneath; unlock it from
   the tray icon's menu.
+- **Launch at startup** — optional, switched on in Settings.
 - **Settings & themes** — pick what the slim bar shows (smart, now playing,
   countdown, stopwatch, clock, date) and one of five themes: Lagoon, Ember,
   Paper, Terminal and Aurora.
