@@ -1,5 +1,5 @@
 // Settings page: theme and dark/light mode, what the slim bar shows, size and
-// look, clock format, sound, startup and updates.
+// look, clock format, weather, sound, startup and updates.
 
 import { load, save } from "./store.js";
 import { THEMES, MODES, themeById } from "./themes.js";
@@ -8,6 +8,7 @@ import { playChime } from "./sound.js";
 import { initUpdates, checkForUpdates, installUpdate, paintUpdates } from "./updates.js";
 import { paintLayout } from "./layout.js";
 import { inTauri } from "./tauri.js";
+import { paintWeather, weatherOn } from "./weather.js";
 
 const DEFAULTS = {
   theme: "lagoon",
@@ -23,6 +24,7 @@ const DEFAULTS = {
     { id: "countdown", on: true },
     { id: "media", on: true },
     { id: "stopwatch", on: true },
+    { id: "weather", on: true },
   ],
 };
 
@@ -30,13 +32,18 @@ export const SMART_ITEMS = {
   countdown: { label: "Countdown", hint: "a running countdown" },
   media: { label: "Now playing", hint: "music while it plays" },
   stopwatch: { label: "Stopwatch", hint: "a running stopwatch" },
+  weather: { label: "Weather", hint: "the weather", needs: weatherOn },
 };
+
+// Items whose feature is switched off stay out of the list.
+const smartAvailable = (s) => SMART_ITEMS[s.id].needs?.() ?? true;
 
 export const BAR_MODES = [
   { id: "smart", label: "Smart" },
   { id: "media", label: "Now playing" },
   { id: "countdown", label: "Countdown" },
   { id: "stopwatch", label: "Stopwatch" },
+  { id: "weather", label: "Weather", needs: weatherOn },
   { id: "clock", label: "Clock" },
   { id: "date", label: "Date & time" },
 ];
@@ -117,9 +124,12 @@ export function initSettings(onChange) {
     const move = e.target.closest("[data-smart-move]");
     if (move) {
       const smart = [...settings.smart];
-      const i = smart.findIndex((s) => s.id === move.closest("[data-smart]").dataset.smart);
-      const j = i + Number(move.dataset.smartMove);
-      if (j < 0 || j >= smart.length) return;
+      const shown = smart.filter(smartAvailable);
+      const at = shown.findIndex((s) => s.id === move.closest("[data-smart]").dataset.smart);
+      const other = shown[at + Number(move.dataset.smartMove)];
+      if (!other) return;
+      const i = smart.indexOf(shown[at]);
+      const j = smart.indexOf(other);
       [smart[i], smart[j]] = [smart[j], smart[i]];
       return update({ smart });
     }
@@ -152,7 +162,9 @@ export function initSettings(onChange) {
 export function render() {
   const page = document.getElementById("settings-page");
   const barHint = BAR_MODES.find((m) => m.id === settings.bar)?.hint ?? "";
-  const smartOn = settings.smart.filter((s) => s.on).map((s) => SMART_ITEMS[s.id].hint);
+  const smartShown = settings.smart.filter(smartAvailable);
+  const barModes = BAR_MODES.filter((m) => m.needs?.() ?? true);
+  const smartOn = smartShown.filter((s) => s.on).map((s) => SMART_ITEMS[s.id].hint);
   const smartHint = smartOn.length
     ? `Shows ${smartOn.join(", then ")}; otherwise the clock.`
     : "Everything is off, so it shows the clock.";
@@ -176,14 +188,14 @@ export function render() {
 
     <h3>The slim bar shows</h3>
     <div class="chips">
-      ${BAR_MODES.map(
+      ${barModes.map(
         (m) => `<button class="chip ${m.id === settings.bar ? "is-active" : ""}" data-bar="${m.id}">${m.label}</button>`
       ).join("")}
     </div>
     ${
       settings.bar === "smart"
         ? `<ol class="smart-order">
-            ${settings.smart
+            ${smartShown
               .map(
                 (s, i, all) => `
               <li class="smart-item ${s.on ? "" : "is-off"}" data-smart="${s.id}">
@@ -207,6 +219,8 @@ export function render() {
       <span>24-hour clock</span>
       <input type="checkbox" class="switch" id="set-24h" ${settings.clock24 ? "checked" : ""} />
     </label>
+
+    <div id="weather-box"></div>
 
     <h3>When a countdown ends</h3>
     <label class="switch-row">
@@ -238,6 +252,7 @@ export function render() {
   `;
   paintUpdates();
   paintLayout();
+  paintWeather();
 
   // Each tile previews its own theme's icon style.
   for (const tile of page.querySelectorAll(".theme-tile")) {
