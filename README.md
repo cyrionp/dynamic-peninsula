@@ -29,8 +29,9 @@ screen. Hover it and it opens; move away and it tucks itself back in.
   the tray icon's menu.
 - **Launch at startup** — optional, switched on in Settings.
 - **Settings & themes** — pick what the slim bar shows (smart, now playing,
-  countdown, stopwatch, clock, date) and one of five themes: Lagoon, Ember,
-  Paper, Terminal and Aurora.
+  countdown, stopwatch, clock, date) and one of ten themes, each with a dark
+  and a light mode: Lagoon, Ember, Paper, Terminal, Aurora, Frost, Moss,
+  Graphite, Sakura and Citrus.
 
 No accounts, no tracking. Everything is stored on your own computer.
 
