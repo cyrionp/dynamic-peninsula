@@ -3,7 +3,7 @@
 
 import { load, save } from "./store.js";
 import { THEMES, MODES, themeById } from "./themes.js";
-import { setIconStyle, paintIcons } from "./icons.js";
+import { setIconStyle, paintIcons, icon } from "./icons.js";
 import { playChime } from "./sound.js";
 import { initUpdates, checkForUpdates, installUpdate, paintUpdates } from "./updates.js";
 import { paintLayout } from "./layout.js";
@@ -16,10 +16,22 @@ const DEFAULTS = {
   clock24: true,
   sound: true,
   volume: 0.6,
+  // What Smart shows, most important first; the clock fills in otherwise.
+  smart: [
+    { id: "countdown", on: true },
+    { id: "media", on: true },
+    { id: "stopwatch", on: true },
+  ],
+};
+
+export const SMART_ITEMS = {
+  countdown: { label: "Countdown", hint: "a running countdown" },
+  media: { label: "Now playing", hint: "music while it plays" },
+  stopwatch: { label: "Stopwatch", hint: "a running stopwatch" },
 };
 
 export const BAR_MODES = [
-  { id: "smart", label: "Smart", hint: "Countdown, then music, then stopwatch, else the clock" },
+  { id: "smart", label: "Smart" },
   { id: "media", label: "Now playing" },
   { id: "countdown", label: "Countdown" },
   { id: "stopwatch", label: "Stopwatch" },
@@ -31,6 +43,11 @@ const saved = load("settings", {});
 // Paper was the only light theme before modes existed; keep it light.
 if (!saved.mode && saved.theme === "paper") saved.mode = "light";
 let settings = { ...DEFAULTS, ...saved };
+// Keep exactly one entry per known item, whatever was stored.
+settings.smart = [
+  ...(Array.isArray(saved.smart) ? saved.smart : []).filter((s) => SMART_ITEMS[s?.id]),
+  ...DEFAULTS.smart,
+].filter((s, i, all) => all.findIndex((t) => t.id === s.id) === i);
 let changed = () => {};
 
 // Launch at startup lives in the OS (a Run registry entry on Windows), not in
@@ -95,6 +112,16 @@ export function initSettings(onChange) {
     const bar = e.target.closest("[data-bar]");
     if (bar) return update({ bar: bar.dataset.bar });
 
+    const move = e.target.closest("[data-smart-move]");
+    if (move) {
+      const smart = [...settings.smart];
+      const i = smart.findIndex((s) => s.id === move.closest("[data-smart]").dataset.smart);
+      const j = i + Number(move.dataset.smartMove);
+      if (j < 0 || j >= smart.length) return;
+      [smart[i], smart[j]] = [smart[j], smart[i]];
+      return update({ smart });
+    }
+
     if (e.target.closest("#test-sound")) playChime(settings.volume);
     if (e.target.closest("#check-updates")) checkForUpdates();
     if (e.target.closest("#install-update")) installUpdate();
@@ -102,6 +129,10 @@ export function initSettings(onChange) {
 
   page.addEventListener("change", (e) => {
     if (e.target.id === "set-24h") update({ clock24: e.target.checked });
+    if (e.target.dataset.smartToggle) {
+      const id = e.target.dataset.smartToggle;
+      update({ smart: settings.smart.map((s) => (s.id === id ? { ...s, on: e.target.checked } : s)) });
+    }
     if (e.target.id === "set-sound") update({ sound: e.target.checked });
     if (e.target.id === "set-autostart") setAutostart(e.target.checked);
     if (e.target.id === "set-volume") {
@@ -118,6 +149,10 @@ export function initSettings(onChange) {
 export function render() {
   const page = document.getElementById("settings-page");
   const barHint = BAR_MODES.find((m) => m.id === settings.bar)?.hint ?? "";
+  const smartOn = settings.smart.filter((s) => s.on).map((s) => SMART_ITEMS[s.id].hint);
+  const smartHint = smartOn.length
+    ? `Shows ${smartOn.join(", then ")}; otherwise the clock.`
+    : "Everything is off, so it shows the clock.";
 
   page.innerHTML = `
     <h3>Theme</h3>
@@ -142,7 +177,25 @@ export function render() {
         (m) => `<button class="chip ${m.id === settings.bar ? "is-active" : ""}" data-bar="${m.id}">${m.label}</button>`
       ).join("")}
     </div>
-    <p class="hint">${barHint}</p>
+    ${
+      settings.bar === "smart"
+        ? `<ol class="smart-order">
+            ${settings.smart
+              .map(
+                (s, i, all) => `
+              <li class="smart-item ${s.on ? "" : "is-off"}" data-smart="${s.id}">
+                <span class="smart-rank">${i + 1}</span>
+                <span class="smart-label">${SMART_ITEMS[s.id].label}</span>
+                <button class="icon-btn" data-smart-move="-1" title="Move up" ${i === 0 ? "disabled" : ""}>${icon("up")}</button>
+                <button class="icon-btn" data-smart-move="1" title="Move down" ${i === all.length - 1 ? "disabled" : ""}>${icon("down")}</button>
+                <input type="checkbox" class="switch" data-smart-toggle="${s.id}" title="Show in Smart" ${s.on ? "checked" : ""} />
+              </li>`
+              )
+              .join("")}
+          </ol>
+          <p class="hint">${smartHint}</p>`
+        : `<p class="hint">${barHint}</p>`
+    }
 
     <div id="layout-box"></div>
 

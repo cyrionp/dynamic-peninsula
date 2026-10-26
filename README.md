@@ -13,10 +13,13 @@ screen. Hover it and it opens; move away and it tucks itself back in.
 - **Media controls** — see what's playing and play / pause / skip, from any
   player Windows knows about (Spotify, Apple Music, browsers). While music
   plays, previous / play-pause / next sit right on the slim bar too, in the
-  full and the minimal look. When a player shares no artwork, a music-note
-  cover in the theme's colours stands in.
+  full and the minimal look. A progress bar shows where the track is; click
+  it to jump. Scroll the mouse wheel over the bar to change the system
+  volume. When a player shares no artwork, a music-note cover in the
+  theme's colours stands in.
 - **Notes** — as many as you like, shown as cards, each with an optional
-  title and saved as you type.
+  title and saved as you type. Drag cards to reorder them and pin the
+  important ones to the top.
 - **To-do list** — add, tick off, delete.
 - **Countdowns** — as many as you like, each with a name: either a length
   ("25 minutes") or a clock time ("until 18:30"). When one ends the
@@ -29,7 +32,8 @@ screen. Hover it and it opens; move away and it tucks itself back in.
   the tray icon's menu.
 - **Launch at startup** — optional, switched on in Settings.
 - **Settings & themes** — pick what the slim bar shows (smart, now playing,
-  countdown, stopwatch, clock, date) and one of ten themes, each with a dark
+  countdown, stopwatch, clock, date; for Smart you set the order and what it
+  may show) and one of ten themes, each with a dark
   and a light mode: Lagoon, Ember, Paper, Terminal, Aurora, Frost, Moss,
   Graphite, Sakura and Citrus.
 

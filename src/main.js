@@ -141,7 +141,58 @@ function mediaView(onlyPlaying) {
   };
 }
 
+/* ---------- mouse wheel over the bar: system volume ---------- */
+
+const VOLUME_STEP = 0.02;
+let volumeShown = null;
+let volumeTimer = null;
+let volumePending = 0;
+let volumeBusy = false;
+
+// One call at a time; wheel ticks that arrive meanwhile are added up.
+async function sendVolume() {
+  if (volumeBusy || !volumePending) return;
+  volumeBusy = true;
+  const delta = volumePending;
+  volumePending = 0;
+  try {
+    const v = await call("volume_step", { delta });
+    if (v) showVolume(v);
+  } catch {
+    // no audio device: nothing to show
+  }
+  volumeBusy = false;
+  sendVolume();
+}
+
+function showVolume(v) {
+  volumeShown = v;
+  clearTimeout(volumeTimer);
+  volumeTimer = setTimeout(() => {
+    volumeShown = null;
+    paintBar();
+  }, 1400);
+  paintBar();
+}
+
+document.getElementById("bar").addEventListener(
+  "wheel",
+  (e) => {
+    if (!e.deltaY) return;
+    e.preventDefault();
+    volumePending += e.deltaY < 0 ? VOLUME_STEP : -VOLUME_STEP;
+    sendVolume();
+  },
+  { passive: false }
+);
+
+function volumeView() {
+  const { level, muted } = volumeShown;
+  return { lead: muted ? "mute" : "volume", text: muted ? "Muted" : "Volume", value: `${Math.round(level * 100)}%` };
+}
+
 function barView() {
+  if (volumeShown) return volumeView();
   switch (getSettings().bar) {
     case "media":
       return mediaView(false) ?? clockView();
@@ -153,8 +204,23 @@ function barView() {
     case "date":
       return clockView();
     default:
-      return countdownView() ?? mediaView(true) ?? stopwatchView() ?? clockView();
+      return smartView();
   }
+}
+
+const SMART_VIEWS = {
+  countdown: countdownView,
+  media: () => mediaView(true),
+  stopwatch: stopwatchView,
+};
+
+// The first item in the user's order that has something to show.
+function smartView() {
+  for (const item of getSettings().smart) {
+    const view = item.on && SMART_VIEWS[item.id]?.();
+    if (view) return view;
+  }
+  return clockView();
 }
 
 let lastLead = "";
