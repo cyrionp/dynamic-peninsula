@@ -27,6 +27,12 @@ windows = { version = "0.62", features = [
   "Foundation",
   "Media_Control",
   "Storage_Streams",
+  # Master volume (Core Audio).
+  "Win32_Media_Audio",
+  "Win32_Media_Audio_Endpoints",
+  "Win32_System_Com",
+  "Win32_System_Com_StructuredStorage",
+  "Win32_System_Variant",
 ] }
 windows-future = "0.3"
 base64 = "0.22"
@@ -35,6 +41,8 @@ base64 = "0.22"
 # Update check against the latest GitHub Release, and restarting afterwards.
 tauri-plugin-process = "2"
 tauri-plugin-updater = "2"
+# Optional "launch at startup" (a Run registry entry on Windows).
+tauri-plugin-autostart = "2"
 
 [profile.release]
 codegen-units = 1

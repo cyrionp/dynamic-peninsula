@@ -27,6 +27,15 @@ export function formatRemaining(ms) {
   return h > 0 ? `${h}:${pad(m)}:${pad(s)}` : `${pad(m)}:${pad(s)}`;
 }
 
+/** Track time: m:ss, or h:mm:ss for long tracks. */
+export function formatTrack(ms) {
+  const total = Math.floor(Math.max(0, ms) / 1000);
+  const s = total % 60;
+  const m = Math.floor(total / 60) % 60;
+  const h = Math.floor(total / 3600);
+  return h > 0 ? `${h}:${pad(m)}:${pad(s)}` : `${m}:${pad(s)}`;
+}
+
 /** Stopwatch time without centiseconds, for the slim bar. */
 export function formatElapsedShort(ms) {
   return formatRemaining(Math.floor(ms / 1000) * 1000);

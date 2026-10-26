@@ -18,6 +18,13 @@ const line = {
   next: `<path d="M5 5l10 7-10 7z"/><path d="M19 5v14"/>`,
   previous: `<path d="M19 5L9 12l10 7z"/><path d="M5 5v14"/>`,
   clock: `<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>`,
+  back: `<path d="M15 5l-7 7 7 7"/>`,
+  up: `<path d="M6 15l6-6 6 6"/>`,
+  down: `<path d="M6 9l6 6 6-6"/>`,
+  pin: `<path d="M9 3h6l-1 6 4 4H6l4-4z"/><path d="M12 13v8"/>`,
+  volume: `<path d="M4 9h4l5-4v14l-5-4H4z"/><path d="M16.5 9a4 4 0 0 1 0 6M19 6.5a7.5 7.5 0 0 1 0 11"/>`,
+  mute: `<path d="M4 9h4l5-4v14l-5-4H4z"/><path d="M16 10l5 5M21 10l-5 5"/>`,
+  trash: `<path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/>`,
 };
 
 const solid = {
@@ -36,6 +43,13 @@ const solid = {
   next: `<path d="M4 5.2v13.6a1 1 0 0 0 1.6.8l9.4-6.8a1 1 0 0 0 0-1.6L5.6 4.4a1 1 0 0 0-1.6.8z"/><rect x="17" y="4" width="3" height="16" rx="1.2"/>`,
   previous: `<path d="M20 5.2v13.6a1 1 0 0 1-1.6.8L9 12.8a1 1 0 0 1 0-1.6l9.4-6.8a1 1 0 0 1 1.6.8z"/><rect x="4" y="4" width="3" height="16" rx="1.2"/>`,
   clock: `<path fill-rule="evenodd" d="M12 2a10 10 0 1 1 0 20 10 10 0 0 1 0-20zm-1 5v6l4.5 2.7 1-1.7-3.5-2.1V7z"/>`,
+  back: `<path d="M14.6 3.4l2.1 2.1L10.2 12l6.5 6.5-2.1 2.1L6 12z"/>`,
+  up: `<path d="M12 6.6l8.1 8.1-2.1 2.1-6-6-6 6-2.1-2.1z"/>`,
+  down: `<path d="M12 17.4l-8.1-8.1 2.1-2.1 6 6 6-6 2.1 2.1z"/>`,
+  pin: `<path d="M8.5 2h7l-1 6.5 4.5 4.5v2H5v-2l4.5-4.5z"/><rect x="11" y="14" width="2" height="8" rx="1"/>`,
+  volume: `<path d="M3 8.5h4.5L13 4v16l-5.5-4.5H3z"/><g fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M16.5 9a4 4 0 0 1 0 6"/><path d="M19 6.5a7.5 7.5 0 0 1 0 11"/></g>`,
+  mute: `<path d="M3 8.5h4.5L13 4v16l-5.5-4.5H3z"/><path d="M16 10l5 5M21 10l-5 5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>`,
+  trash: `<path fill-rule="evenodd" d="M9 2h6v3h5v2.5H4V5h5zM5.5 9h13l-1 13h-11zm4 2.5v7h2v-7zm3 0v7h2v-7z"/>`,
 };
 
 let style = "line";

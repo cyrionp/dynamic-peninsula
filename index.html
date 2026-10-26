@@ -15,6 +15,8 @@
           <span class="bar-lead" id="bar-lead"><span class="dot"></span></span>
           <span class="bar-text" id="bar-text"></span>
           <span class="bar-value" id="bar-value"></span>
+          <!-- Play/pause, previous and next while music is playing. -->
+          <span class="bar-controls" id="bar-controls"></span>
         </div>
 
         <!-- Shown when a countdown ends. -->
@@ -34,7 +36,7 @@
             <button class="tab" data-page="media"><i data-icon="media"></i><span>Media</span></button>
             <button class="tab" data-page="timers"><i data-icon="stopwatch"></i><span>Stopwatch</span></button>
             <button class="tab" data-page="countdowns"><i data-icon="countdown"></i><span>Countdown</span></button>
-            <button class="tab" data-page="notes"><i data-icon="note"></i><span>Note</span></button>
+            <button class="tab" data-page="notes"><i data-icon="note"></i><span>Notes</span></button>
             <button class="tab" data-page="todo"><i data-icon="todo"></i><span>To-do</span></button>
             <button class="tab" data-page="settings"><i data-icon="settings"></i><span>Settings</span></button>
           </nav>
@@ -70,7 +72,24 @@
           </section>
 
           <section class="page" data-page="notes">
-            <textarea id="note" class="note" placeholder="Jot something… it saves as you type." spellcheck="false"></textarea>
+            <div class="notes" id="notes" data-view="grid">
+              <div class="notes-grid">
+                <div class="row">
+                  <strong>Notes</strong>
+                  <button class="mini" id="note-add"><i data-icon="plus"></i>New note</button>
+                </div>
+                <ul id="note-grid" class="note-cards"></ul>
+              </div>
+              <div class="notes-editor">
+                <div class="note-head">
+                  <button class="icon-btn" id="note-back" title="All notes" data-icon="back"></button>
+                  <input id="note-title" class="field note-title" placeholder="Title (optional)" spellcheck="false" autocomplete="off" />
+                  <button class="icon-btn pin" id="note-pin" title="Pin to the top" data-icon="pin"></button>
+                  <button class="icon-btn danger" id="note-delete" title="Delete note" data-icon="trash"></button>
+                </div>
+                <textarea id="note" class="note" placeholder="Jot something… it saves as you type." spellcheck="false"></textarea>
+              </div>
+            </div>
           </section>
 
           <section class="page" data-page="todo">

@@ -1,4 +1,5 @@
 mod media;
+mod volume;
 
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Mutex;
@@ -67,6 +68,17 @@ fn media_state() -> media::MediaState {
 #[tauri::command]
 async fn media_control(action: String) -> Result<(), String> {
     media::control(&action)
+}
+
+#[tauri::command]
+async fn media_seek(position_ms: u64) -> Result<(), String> {
+    media::seek(position_ms)
+}
+
+/// Mouse wheel over the bar: moves the system volume by `delta` (0.0 – 1.0).
+#[tauri::command]
+async fn volume_step(delta: f32) -> Result<volume::Volume, String> {
+    volume::step(delta)
 }
 
 /// Places the window at the top-center of the primary monitor. Only a
@@ -195,13 +207,19 @@ pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_process::init())
+        .plugin(tauri_plugin_autostart::init(
+            tauri_plugin_autostart::MacosLauncher::LaunchAgent,
+            None,
+        ))
         .manage(HitState::default())
         .manage(LockState::default())
         .invoke_handler(tauri::generate_handler![
             set_hit_rect,
             set_locked,
             media_state,
-            media_control
+            media_control,
+            media_seek,
+            volume_step
         ])
         .setup(|app| {
             build_tray(app.handle())?;
