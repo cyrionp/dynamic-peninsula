@@ -30,14 +30,20 @@ screen. Hover it and it opens; move away and it tucks itself back in.
   pill look and its opacity. **Lock** it from Settings and it ignores the
   mouse entirely, so you can click the windows underneath; unlock it from
   the tray icon's menu.
+- **Weather** — optional and off by default. Switch it on in Settings, pick
+  a city, and the bar shows its temperature with an icon for the conditions
+  next to the clock (°C or °F). It can join the Smart order or be the bar's
+  only view. Data comes from [Open-Meteo](https://open-meteo.com), which is
+  free and needs no account; only the city name and its coordinates are sent.
 - **Launch at startup** — optional, switched on in Settings.
 - **Settings & themes** — pick what the slim bar shows (smart, now playing,
-  countdown, stopwatch, clock, date; for Smart you set the order and what it
+  countdown, stopwatch, weather, clock, date; for Smart you set the order and what it
   may show) and one of ten themes, each with a dark
   and a light mode: Lagoon, Ember, Paper, Terminal, Aurora, Frost, Moss,
   Graphite, Sakura and Citrus.
 
-No accounts, no tracking. Everything is stored on your own computer.
+No accounts, no tracking. Everything is stored on your own computer; the
+only thing that goes online is the optional weather lookup (and the update check).
 
 ## Development
 

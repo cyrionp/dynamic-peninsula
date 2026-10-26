@@ -22,6 +22,7 @@ import {
 } from "./media.js";
 import { initNotes, renderNotes, initTodos, renderTodos } from "./lists.js";
 import { initLayout } from "./layout.js";
+import { initWeather, current as currentWeather } from "./weather.js";
 
 const peninsula = document.getElementById("peninsula");
 const barLead = document.getElementById("bar-lead");
@@ -120,6 +121,13 @@ function clockView() {
   return { lead: "dot", text: "", value: time };
 }
 
+// The weather sits next to the clock, so the time never goes missing.
+function weatherView() {
+  const w = currentWeather();
+  if (!w) return null;
+  return { lead: w.icon, text: `${w.temp} ${w.place}`, value: formatClock(new Date(), getSettings().clock24) };
+}
+
 function countdownView() {
   const cd = countdowns.soonest();
   return cd && { lead: "countdown", text: cd.name, value: formatRemaining(countdowns.remaining(cd)), live: true };
@@ -200,6 +208,8 @@ function barView() {
       return countdownView() ?? clockView();
     case "stopwatch":
       return stopwatchView() ?? clockView();
+    case "weather":
+      return weatherView() ?? clockView();
     case "clock":
     case "date":
       return clockView();
@@ -212,6 +222,7 @@ const SMART_VIEWS = {
   countdown: countdownView,
   media: () => mediaView(true),
   stopwatch: stopwatchView,
+  weather: weatherView,
 };
 
 // The first item in the user's order that has something to show.
@@ -382,6 +393,11 @@ countdowns.initCountdowns(onDataChange);
 initNotes();
 initTodos();
 initMedia(() => paintBar());
+initWeather((configChanged) => {
+  // Switching it on or off adds or removes it from the Smart list.
+  if (configChanged) renderSettings();
+  paintBar(true);
+});
 initLayout({
   onLayout: reportHitRect,
   // Locked: it can't be hovered any more, so fold it away.
