@@ -21,6 +21,7 @@ import {
   render as renderMedia,
 } from "./media.js";
 import { initNotes, renderNotes, initTodos, renderTodos } from "./lists.js";
+import { initAudio, noticeView, render as renderAudio } from "./audio.js";
 import { initLayout } from "./layout.js";
 
 const peninsula = document.getElementById("peninsula");
@@ -193,6 +194,8 @@ function volumeView() {
 
 function barView() {
   if (volumeShown) return volumeView();
+  const headphones = noticeView();
+  if (headphones) return headphones;
   switch (getSettings().bar) {
     case "media":
       return mediaView(false) ?? clockView();
@@ -369,6 +372,7 @@ function onSettingsChange(patch) {
     renderNotes();
     renderTodos();
     renderMedia();
+    renderAudio();
     renderSettings();
   }
   paintBar(true);
@@ -382,6 +386,7 @@ countdowns.initCountdowns(onDataChange);
 initNotes();
 initTodos();
 initMedia(() => paintBar());
+initAudio(() => paintBar());
 initLayout({
   onLayout: reportHitRect,
   // Locked: it can't be hovered any more, so fold it away.

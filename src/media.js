@@ -7,6 +7,7 @@ import { escapeHtml, formatTrack } from "./util.js";
 
 let state = { available: false, hasSession: false };
 let pageEl = null;
+let nowEl = null;
 let changed = () => {};
 
 export const media = () => state;
@@ -102,6 +103,7 @@ export function prettySource(id = "") {
 export async function initMedia(onChange) {
   changed = onChange;
   pageEl = document.getElementById("media-page");
+  nowEl = document.getElementById("media-now");
   guardCovers(pageEl);
 
   pageEl.addEventListener("click", (e) => {
@@ -137,15 +139,15 @@ export function render() {
   if (!pageEl) return;
   syncProgress();
   if (!state.available) {
-    pageEl.innerHTML = `<div class="media-empty">${icon("media")}<p>Media controls work on Windows.</p></div>`;
+    nowEl.innerHTML = `<div class="media-empty">${icon("media")}<p>Media controls work on Windows.</p></div>`;
     return;
   }
   if (!state.hasSession) {
-    pageEl.innerHTML = `<div class="media-empty">${icon("media")}<p>Nothing is playing.</p><small>Start music in Spotify, a browser or any player.</small></div>`;
+    nowEl.innerHTML = `<div class="media-empty">${icon("media")}<p>Nothing is playing.</p><small>Start music in Spotify, a browser or any player.</small></div>`;
     return;
   }
 
-  pageEl.innerHTML = `
+  nowEl.innerHTML = `
     <div class="media-card">
       ${coverHtml(state.thumbnail, "cover")}
       <div class="media-info">

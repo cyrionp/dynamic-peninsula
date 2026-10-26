@@ -25,6 +25,9 @@ const line = {
   volume: `<path d="M4 9h4l5-4v14l-5-4H4z"/><path d="M16.5 9a4 4 0 0 1 0 6M19 6.5a7.5 7.5 0 0 1 0 11"/>`,
   mute: `<path d="M4 9h4l5-4v14l-5-4H4z"/><path d="M16 10l5 5M21 10l-5 5"/>`,
   trash: `<path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/>`,
+  headphones: `<path d="M4 17v-4a8 8 0 0 1 16 0v4"/><rect x="3" y="14" width="4" height="7" rx="1.5"/><rect x="17" y="14" width="4" height="7" rx="1.5"/>`,
+  speaker: `<rect x="5" y="2" width="14" height="20" rx="3"/><circle cx="12" cy="14" r="3.5"/><path d="M12 6.5h0"/>`,
+  bolt: `<path d="M13 2L5 14h6l-1 8 8-12h-6z"/>`,
 };
 
 const solid = {
@@ -50,6 +53,9 @@ const solid = {
   volume: `<path d="M3 8.5h4.5L13 4v16l-5.5-4.5H3z"/><g fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M16.5 9a4 4 0 0 1 0 6"/><path d="M19 6.5a7.5 7.5 0 0 1 0 11"/></g>`,
   mute: `<path d="M3 8.5h4.5L13 4v16l-5.5-4.5H3z"/><path d="M16 10l5 5M21 10l-5 5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>`,
   trash: `<path fill-rule="evenodd" d="M9 2h6v3h5v2.5H4V5h5zM5.5 9h13l-1 13h-11zm4 2.5v7h2v-7zm3 0v7h2v-7z"/>`,
+  headphones: `<path d="M4 17v-4a8 8 0 0 1 16 0v4" fill="none" stroke="currentColor" stroke-width="2.4"/><rect x="2.5" y="13.5" width="5.5" height="8" rx="2"/><rect x="16" y="13.5" width="5.5" height="8" rx="2"/>`,
+  speaker: `<path fill-rule="evenodd" d="M8 2h8a3 3 0 0 1 3 3v14a3 3 0 0 1-3 3H8a3 3 0 0 1-3-3V5a3 3 0 0 1 3-3zm4 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8zm0-5a1.3 1.3 0 1 0 0 2.6A1.3 1.3 0 0 0 12 5z"/>`,
+  bolt: `<path d="M13.5 1.5L4 14.5h6.5l-1 8 9.5-13h-6.5z"/>`,
 };
 
 let style = "line";

@@ -17,6 +17,14 @@ screen. Hover it and it opens; move away and it tucks itself back in.
   it to jump. Scroll the mouse wheel over the bar to change the system
   volume. When a player shares no artwork, a music-note cover in the
   theme's colours stands in.
+- **Output device and headphones** — under "now playing", pick where the
+  sound goes (headphones, speakers, a monitor) without opening Windows
+  settings. With AirPods, the left and right earbud and the case show
+  their battery, and the earbud that is in an ear lights up; other
+  Bluetooth headsets show the battery Windows reports. When headphones
+  connect, or an earbud goes in or out, the slim bar says so for a moment
+  (can be turned off in Settings). AirPods data comes from their Bluetooth
+  signal in 10 % steps, the same way MagicPods reads it.
 - **Notes** — as many as you like, shown as cards, each with an optional
   title and saved as you type. Drag cards to reorder them and pin the
   important ones to the top.
