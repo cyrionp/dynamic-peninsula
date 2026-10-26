@@ -21,6 +21,7 @@ import {
   render as renderMedia,
 } from "./media.js";
 import { initNotes, renderNotes, initTodos, renderTodos } from "./lists.js";
+import { initAudio, noticeView, render as renderAudio } from "./audio.js";
 import { initLayout } from "./layout.js";
 import { initWeather, current as currentWeather } from "./weather.js";
 
@@ -201,6 +202,8 @@ function volumeView() {
 
 function barView() {
   if (volumeShown) return volumeView();
+  const headphones = noticeView();
+  if (headphones) return headphones;
   switch (getSettings().bar) {
     case "media":
       return mediaView(false) ?? clockView();
@@ -380,6 +383,7 @@ function onSettingsChange(patch) {
     renderNotes();
     renderTodos();
     renderMedia();
+    renderAudio();
     renderSettings();
   }
   paintBar(true);
@@ -393,6 +397,7 @@ countdowns.initCountdowns(onDataChange);
 initNotes();
 initTodos();
 initMedia(() => paintBar());
+initAudio(() => paintBar());
 initWeather((configChanged) => {
   // Switching it on or off adds or removes it from the Smart list.
   if (configChanged) renderSettings();

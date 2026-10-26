@@ -766,6 +766,8 @@ dependencies = [
  "tauri-plugin-process",
  "tauri-plugin-updater",
  "windows",
+ "windows-collections",
+ "windows-core",
  "windows-future",
 ]
 

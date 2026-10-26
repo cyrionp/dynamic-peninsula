@@ -1,3 +1,5 @@
+mod airpods;
+mod audio;
 mod media;
 mod volume;
 
@@ -79,6 +81,21 @@ async fn media_seek(position_ms: u64) -> Result<(), String> {
 #[tauri::command]
 async fn volume_step(delta: f32) -> Result<volume::Volume, String> {
     volume::step(delta)
+}
+
+#[tauri::command]
+fn audio_devices() -> audio::AudioState {
+    audio::snapshot()
+}
+
+#[tauri::command]
+async fn audio_set_default(id: String) -> Result<(), String> {
+    audio::set_default(&id)
+}
+
+#[tauri::command]
+fn airpods_state() -> Option<airpods::Pods> {
+    airpods::snapshot()
 }
 
 /// Places the window at the top-center of the primary monitor. Only a
@@ -219,7 +236,10 @@ pub fn run() {
             media_state,
             media_control,
             media_seek,
-            volume_step
+            volume_step,
+            audio_devices,
+            audio_set_default,
+            airpods_state
         ])
         .setup(|app| {
             build_tray(app.handle())?;
@@ -229,6 +249,8 @@ pub fn run() {
             spawn_show_fallback(app.handle());
             spawn_click_through(app.handle());
             media::init(app.handle());
+            audio::init(app.handle());
+            airpods::init(app.handle());
             Ok(())
         })
         .run(tauri::generate_context!())

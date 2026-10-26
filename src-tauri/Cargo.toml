@@ -25,6 +25,7 @@ serde_json = "1"
 # Global System Media Transport Controls ("now playing" on Windows).
 windows = { version = "0.62", features = [
   "Foundation",
+  "Foundation_Collections",
   "Media_Control",
   "Storage_Streams",
   # Master volume (Core Audio).
@@ -33,7 +34,15 @@ windows = { version = "0.62", features = [
   "Win32_System_Com",
   "Win32_System_Com_StructuredStorage",
   "Win32_System_Variant",
+  # Listing and switching playback devices, and a headset's battery.
+  "Devices_Enumeration",
+  "Media_Devices",
+  # AirPods battery and in-ear status from their Bluetooth LE advertisements.
+  "Devices_Bluetooth_Advertisement",
 ] }
+windows-collections = "0.3"
+# The `#[interface]` macro (IPolicyConfig) expands to paths in this crate.
+windows-core = "0.62"
 windows-future = "0.3"
 base64 = "0.22"
 

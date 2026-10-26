@@ -17,6 +17,8 @@ const DEFAULTS = {
   clock24: true,
   sound: true,
   volume: 0.6,
+  // Pop up on the slim bar when headphones connect or an earbud goes in.
+  headphoneAlerts: true,
   // What Smart shows, most important first; the clock fills in otherwise.
   smart: [
     { id: "countdown", on: true },
@@ -144,6 +146,7 @@ export function initSettings(onChange) {
       update({ smart: settings.smart.map((s) => (s.id === id ? { ...s, on: e.target.checked } : s)) });
     }
     if (e.target.id === "set-sound") update({ sound: e.target.checked });
+    if (e.target.id === "set-headphones") update({ headphoneAlerts: e.target.checked });
     if (e.target.id === "set-autostart") setAutostart(e.target.checked);
     if (e.target.id === "set-volume") {
       update({ volume: Number(e.target.value) });
@@ -229,6 +232,13 @@ export function render() {
       <input type="range" id="set-volume" min="0.1" max="1" step="0.1" value="${settings.volume}" />
       <button class="mini" id="test-sound">Test</button>
     </div>
+
+    <h3>Headphones</h3>
+    <label class="switch-row">
+      <span>Show battery when they connect, and which earbud is in</span>
+      <input type="checkbox" class="switch" id="set-headphones" ${settings.headphoneAlerts ? "checked" : ""} />
+    </label>
+    <p class="hint">AirPods battery and in-ear status come from their Bluetooth signal; other headsets show the battery Windows reports.</p>
 
     <h3>Startup</h3>
     <label class="switch-row">
