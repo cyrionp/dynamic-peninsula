@@ -470,13 +470,31 @@ button {
   display: inline-flex;
 }
 
-/* The transparent canvas filling the whole window. */
+/* The transparent canvas filling the whole window. The peninsula is pinned
+   to the side it opens away from (set by layout.js from its screen spot). */
 .stage {
   width: 100%;
   height: 100%;
   display: flex;
   justify-content: center;
   align-items: flex-start;
+  padding: var(--pad, 0);
+}
+
+.stage[data-docked="true"] {
+  padding-top: 0;
+}
+
+.stage[data-h="start"] {
+  justify-content: flex-start;
+}
+
+.stage[data-h="end"] {
+  justify-content: flex-end;
+}
+
+.stage[data-v="end"] {
+  align-items: flex-end;
 }
 
 /* ==========================================================================
@@ -484,7 +502,15 @@ button {
    ========================================================================== */
 
 .peninsula {
+  --bar-w: 220px;
+  --bar-h: 34px;
+  --bar-font: 13px;
+  --panel-w: 480px;
+  --panel-h: 320px;
+  --pen-opacity: 1;
+  flex: none;
   position: relative;
+  opacity: var(--pen-opacity);
   background: var(--bg);
   color: var(--fg);
   font-family: var(--font);
@@ -498,17 +524,46 @@ button {
   transition:
     width 0.34s cubic-bezier(0.2, 0.9, 0.25, 1),
     height 0.34s cubic-bezier(0.2, 0.9, 0.25, 1),
-    border-radius 0.34s ease;
+    border-radius 0.34s ease,
+    opacity 0.2s ease;
 }
 
 .peninsula[data-state="collapsed"] {
-  width: 220px;
-  height: 34px;
+  width: var(--bar-w);
+  height: var(--bar-h);
 }
 
 .peninsula[data-state="expanded"] {
-  width: 480px;
-  height: 320px;
+  width: var(--panel-w);
+  height: var(--panel-h);
+}
+
+.peninsula.solid-open:not([data-state="collapsed"]) {
+  opacity: 1;
+}
+
+/* Moved away from the top edge: a floating card, rounded all round. */
+.stage[data-docked="false"] .peninsula {
+  border-top: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+
+.stage[data-docked="false"] .peninsula[data-state="collapsed"] {
+  border-radius: min(var(--radius), calc(var(--bar-h) / 2));
+}
+
+/* Minimal: a short pill with just the icon and the time. */
+.peninsula.is-minimal .bar-text {
+  display: none;
+}
+
+.peninsula.is-minimal .bar {
+  padding: 0 10px;
+  gap: 6px;
+}
+
+.peninsula.is-minimal[data-state="collapsed"] {
+  box-shadow: none;
 }
 
 .peninsula[data-state="alert"] {
@@ -519,13 +574,13 @@ button {
 /* ---------- slim bar ---------- */
 
 .bar {
-  height: 34px;
+  height: var(--bar-h);
   padding: 0 14px;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  font-size: 13px;
+  font-size: var(--bar-font);
   transition: opacity 0.2s ease;
 }
 
@@ -603,7 +658,7 @@ button {
   opacity: 0;
   pointer-events: none;
   padding: 0 14px 14px;
-  height: calc(100% - 34px);
+  height: calc(100% - var(--bar-h));
   display: flex;
   flex-direction: column;
   transition: opacity 0.18s ease;
@@ -1168,6 +1223,11 @@ button {
   margin-top: 0;
 }
 
+/* The size and look section is rendered into its own box. */
+.settings #layout-box h3:first-child {
+  margin-top: 10px;
+}
+
 .theme-grid {
   display: grid;
   grid-template-columns: repeat(5, 1fr);
@@ -1305,6 +1365,14 @@ button {
 input[type="range"] {
   width: 120px;
   accent-color: var(--accent);
+}
+
+.range-value {
+  width: 36px;
+  text-align: right;
+  font-size: 12px;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
 }
 
 /* ==========================================================================

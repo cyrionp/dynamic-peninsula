@@ -1,16 +1,18 @@
 mod media;
 
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Mutex;
 use std::time::Duration;
 
 use tauri::{
-    menu::{Menu, MenuItem},
+    menu::{CheckMenuItem, Menu, MenuItem},
     tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent},
-    AppHandle, LogicalPosition, Manager, State, WebviewWindow,
+    AppHandle, Emitter, LogicalPosition, Manager, State, WebviewWindow, Wry,
 };
 
-/// Logical width of the peninsula window; must match `tauri.conf.json`.
-const WINDOW_WIDTH: f64 = 520.0;
+/// If the frontend hasn't placed and shown the window by then, show it at the
+/// top-center so the peninsula never stays invisible.
+const SHOW_FALLBACK: Duration = Duration::from_secs(3);
 
 /// How often the cursor is checked for click-through. Cheap: one syscall.
 const HIT_TEST_INTERVAL: Duration = Duration::from_millis(40);
@@ -27,6 +29,27 @@ struct HitRect {
 
 #[derive(Default)]
 struct HitState(Mutex<HitRect>);
+
+/// Locked: the whole window ignores the mouse, so the apps underneath get
+/// every click. Only the tray menu can unlock it again.
+#[derive(Default)]
+struct LockState(AtomicBool);
+
+/// The tray's lock item, kept so its tick follows the lock from either side.
+struct LockItem(CheckMenuItem<Wry>);
+
+fn set_lock(app: &AppHandle, locked: bool) {
+    app.state::<LockState>().0.store(locked, Ordering::Relaxed);
+    if let Some(item) = app.try_state::<LockItem>() {
+        let _ = item.0.set_checked(locked);
+    }
+    let _ = app.emit("lock-changed", locked);
+}
+
+#[tauri::command]
+fn set_locked(locked: bool, app: AppHandle) {
+    set_lock(&app, locked);
+}
 
 #[tauri::command]
 fn set_hit_rect(rect: HitRect, state: State<'_, HitState>) {
@@ -46,7 +69,8 @@ async fn media_control(action: String) -> Result<(), String> {
     media::control(&action)
 }
 
-/// Places the window at the top-center of the primary monitor.
+/// Places the window at the top-center of the primary monitor. Only a
+/// fallback: the frontend normally places it where the user left it.
 fn position_top_center(window: &WebviewWindow) -> tauri::Result<()> {
     let monitor = window.primary_monitor()?.or(window.current_monitor()?);
 
@@ -54,7 +78,8 @@ fn position_top_center(window: &WebviewWindow) -> tauri::Result<()> {
         let scale = monitor.scale_factor();
         let origin = monitor.position().to_logical::<f64>(scale);
         let size = monitor.size().to_logical::<f64>(scale);
-        let x = origin.x + (size.width - WINDOW_WIDTH) / 2.0;
+        let width = window.outer_size()?.to_logical::<f64>(window.scale_factor()?).width;
+        let x = origin.x + (size.width - width) / 2.0;
         window.set_position(LogicalPosition::new(x, origin.y))?;
     }
     Ok(())
@@ -62,10 +87,22 @@ fn position_top_center(window: &WebviewWindow) -> tauri::Result<()> {
 
 fn show_main(app: &AppHandle) {
     if let Some(window) = app.get_webview_window("main") {
-        let _ = position_top_center(&window);
         let _ = window.show();
         let _ = window.set_always_on_top(true);
     }
+}
+
+fn spawn_show_fallback(app: &AppHandle) {
+    let app = app.clone();
+    std::thread::spawn(move || {
+        std::thread::sleep(SHOW_FALLBACK);
+        if let Some(window) = app.get_webview_window("main") {
+            if !window.is_visible().unwrap_or(true) {
+                let _ = position_top_center(&window);
+                show_main(&app);
+            }
+        }
+    });
 }
 
 /// Lets clicks pass through the transparent part of the window: while the
@@ -100,7 +137,8 @@ fn spawn_click_through(app: &AppHandle) {
                 && y >= rect.y
                 && y <= rect.y + rect.height;
 
-            let ignore = !inside;
+            let locked = app.state::<LockState>().0.load(Ordering::Relaxed);
+            let ignore = locked || !inside;
             if ignoring != Some(ignore) && window.set_ignore_cursor_events(ignore).is_ok() {
                 ignoring = Some(ignore);
             }
@@ -110,8 +148,11 @@ fn spawn_click_through(app: &AppHandle) {
 
 fn build_tray(app: &AppHandle) -> tauri::Result<()> {
     let show = MenuItem::with_id(app, "show", "Show", true, None::<&str>)?;
+    let lock = CheckMenuItem::with_id(app, "lock", "Lock (click-through)", true, false, None::<&str>)?;
+    let center = MenuItem::with_id(app, "center", "Move to top center", true, None::<&str>)?;
     let exit = MenuItem::with_id(app, "exit", "Exit", true, None::<&str>)?;
-    let menu = Menu::with_items(app, &[&show, &exit])?;
+    let menu = Menu::with_items(app, &[&show, &lock, &center, &exit])?;
+    app.manage(LockItem(lock));
 
     let mut tray = TrayIconBuilder::with_id("main")
         .tooltip("Dynamic Peninsula")
@@ -119,6 +160,14 @@ fn build_tray(app: &AppHandle) -> tauri::Result<()> {
         .show_menu_on_left_click(false)
         .on_menu_event(|app, event| match event.id.as_ref() {
             "show" => show_main(app),
+            "lock" => {
+                let locked = app.state::<LockState>().0.load(Ordering::Relaxed);
+                set_lock(app, !locked);
+            }
+            "center" => {
+                show_main(app);
+                let _ = app.emit("reset-position", ());
+            }
             "exit" => app.exit(0),
             _ => {}
         })
@@ -147,14 +196,19 @@ pub fn run() {
         .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_process::init())
         .manage(HitState::default())
+        .manage(LockState::default())
         .invoke_handler(tauri::generate_handler![
             set_hit_rect,
+            set_locked,
             media_state,
             media_control
         ])
         .setup(|app| {
             build_tray(app.handle())?;
-            show_main(app.handle());
+            if let Some(window) = app.get_webview_window("main") {
+                let _ = position_top_center(&window);
+            }
+            spawn_show_fallback(app.handle());
             spawn_click_through(app.handle());
             media::init(app.handle());
             Ok(())

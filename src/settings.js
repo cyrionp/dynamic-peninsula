@@ -1,10 +1,12 @@
-// Settings page: theme and dark/light mode, what the slim bar shows, clock format, sound and updates.
+// Settings page: theme and dark/light mode, what the slim bar shows, size and
+// look, clock format, sound and updates.
 
 import { load, save } from "./store.js";
 import { THEMES, MODES, themeById } from "./themes.js";
 import { setIconStyle, paintIcons } from "./icons.js";
 import { playChime } from "./sound.js";
 import { initUpdates, checkForUpdates, installUpdate, paintUpdates } from "./updates.js";
+import { paintLayout } from "./layout.js";
 
 const DEFAULTS = {
   theme: "lagoon",
@@ -107,6 +109,8 @@ export function render() {
     </div>
     <p class="hint">${barHint}</p>
 
+    <div id="layout-box"></div>
+
     <h3>Clock</h3>
     <label class="switch-row">
       <span>24-hour clock</span>
@@ -128,6 +132,7 @@ export function render() {
     <div id="updates-box"></div>
   `;
   paintUpdates();
+  paintLayout();
 
   // Each tile previews its own theme's icon style.
   for (const tile of page.querySelectorAll(".theme-tile")) {

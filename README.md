@@ -18,6 +18,11 @@ screen. Hover it and it opens; move away and it tucks itself back in.
   ("25 minutes") or a clock time ("until 18:30"). When one ends the
   peninsula drops down, rings and plays a short chime.
 - **Stopwatches** — several independent, named stopwatches at once.
+- **Move it anywhere** — drag the bar to any spot on any screen; near the top
+  it docks again. Pick from four bar sizes and four open sizes, a minimal
+  pill look and its opacity. **Lock** it from Settings and it ignores the
+  mouse entirely, so you can click the windows underneath; unlock it from
+  the tray icon's menu.
 - **Settings & themes** — pick what the slim bar shows (smart, now playing,
   countdown, stopwatch, clock, date) and one of five themes: Lagoon, Ember,
   Paper, Terminal and Aurora.
