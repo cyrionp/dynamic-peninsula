@@ -219,7 +219,9 @@ mod windows_impl {
             state.artist = props.Artist().map(|s| s.to_string()).unwrap_or_default();
 
             let key = format!("{}\0{}", state.title, state.artist);
-            if cover.0 != key {
+            // Players often send the cover a moment after the title, so a
+            // missing one is looked up again on the next change.
+            if cover.0 != key || cover.1.is_none() {
                 *cover = (key, props.Thumbnail().ok().and_then(|t| read_thumbnail(&t)));
             }
             state.thumbnail = cover.1.clone();

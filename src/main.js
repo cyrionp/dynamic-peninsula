@@ -10,7 +10,16 @@ import { formatClock, formatElapsedShort, formatRemaining, escapeHtml } from "./
 import { initSettings, applyTheme, getSettings, render as renderSettings } from "./settings.js";
 import * as stopwatches from "./stopwatches.js";
 import * as countdowns from "./countdowns.js";
-import { initMedia, media, prettySource, coverHtml, guardCovers, render as renderMedia } from "./media.js";
+import {
+  initMedia,
+  media,
+  hasControls,
+  control as mediaControl,
+  prettySource,
+  coverHtml,
+  guardCovers,
+  render as renderMedia,
+} from "./media.js";
 import { initNotes, renderNotes, initTodos, renderTodos } from "./lists.js";
 import { initLayout } from "./layout.js";
 
@@ -18,6 +27,7 @@ const peninsula = document.getElementById("peninsula");
 const barLead = document.getElementById("bar-lead");
 const barText = document.getElementById("bar-text");
 const barValue = document.getElementById("bar-value");
+const barControls = document.getElementById("bar-controls");
 guardCovers(barLead);
 
 let page = load("tab", "media");
@@ -57,9 +67,12 @@ function isEditing() {
   return el.tagName === "TEXTAREA" || (el.tagName === "INPUT" && !["checkbox", "range"].includes(el.type));
 }
 
-peninsula.addEventListener("mouseenter", () => {
+// Hovering the bar's media buttons leaves it closed, so they stay put under
+// the mouse; anywhere else opens the panel.
+peninsula.addEventListener("mouseover", (e) => {
   hovering = true;
   clearTimeout(closeTimer);
+  if (e.target.closest("#bar-controls")) return;
   if (state() !== "alert") setState("expanded");
 });
 
@@ -165,9 +178,32 @@ function paintBar(force = false) {
     barText.innerHTML = escapeHtml(view.text);
   }
   barValue.textContent = view.value;
+  paintControls(force);
   peninsula.classList.toggle("bar-media-paused", view.playing === false);
   peninsula.classList.toggle("bar-has-text", Boolean(view.text));
 }
+
+let lastControls = null;
+
+function paintControls(force) {
+  const show = hasControls();
+  const key = show ? `${media().playing}` : "";
+  peninsula.classList.toggle("bar-has-controls", show);
+  if (!force && key === lastControls) return;
+  lastControls = key;
+  const button = (action, name, title) =>
+    `<button class="bar-btn" data-media="${action}" title="${title}">${icon(name)}</button>`;
+  barControls.innerHTML = show
+    ? button("previous", "previous", "Previous") +
+      button("toggle", media().playing ? "pause" : "play", media().playing ? "Pause" : "Play") +
+      button("next", "next", "Next")
+    : "";
+}
+
+barControls.addEventListener("click", (e) => {
+  const btn = e.target.closest("button[data-media]");
+  if (btn) mediaControl(btn.dataset.media);
+});
 
 // The clock repaints exactly on the minute, so it never lags behind.
 function scheduleClock() {

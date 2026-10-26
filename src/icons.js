@@ -18,6 +18,8 @@ const line = {
   next: `<path d="M5 5l10 7-10 7z"/><path d="M19 5v14"/>`,
   previous: `<path d="M19 5L9 12l10 7z"/><path d="M5 5v14"/>`,
   clock: `<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>`,
+  back: `<path d="M15 5l-7 7 7 7"/>`,
+  trash: `<path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/>`,
 };
 
 const solid = {
@@ -36,6 +38,8 @@ const solid = {
   next: `<path d="M4 5.2v13.6a1 1 0 0 0 1.6.8l9.4-6.8a1 1 0 0 0 0-1.6L5.6 4.4a1 1 0 0 0-1.6.8z"/><rect x="17" y="4" width="3" height="16" rx="1.2"/>`,
   previous: `<path d="M20 5.2v13.6a1 1 0 0 1-1.6.8L9 12.8a1 1 0 0 1 0-1.6l9.4-6.8a1 1 0 0 1 1.6.8z"/><rect x="4" y="4" width="3" height="16" rx="1.2"/>`,
   clock: `<path fill-rule="evenodd" d="M12 2a10 10 0 1 1 0 20 10 10 0 0 1 0-20zm-1 5v6l4.5 2.7 1-1.7-3.5-2.1V7z"/>`,
+  back: `<path d="M14.6 3.4l2.1 2.1L10.2 12l6.5 6.5-2.1 2.1L6 12z"/>`,
+  trash: `<path fill-rule="evenodd" d="M9 2h6v3h5v2.5H4V5h5zM5.5 9h13l-1 13h-11zm4 2.5v7h2v-7zm3 0v7h2v-7z"/>`,
 };
 
 let style = "line";

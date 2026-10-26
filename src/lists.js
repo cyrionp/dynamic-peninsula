@@ -9,87 +9,117 @@ let todoList = null;
 
 /* ---------- notes ---------- */
 
-// Older versions kept a single note under "note"; it becomes the first one.
-let notes = load("notes", null) ?? [{ id: newId(), text: load("note", "") }];
-let activeNote = load("noteActive", notes[0].id);
-if (!notes.some((n) => n.id === activeNote)) activeNote = notes[0].id;
+// Each note is a card with an optional title. Older versions kept a single
+// note under "note"; it becomes the first card.
+let notes = (load("notes", null) ?? [{ id: newId(), text: load("note", "") }]).map((n) => ({
+  title: "",
+  ...n,
+}));
+let openId = null;
 
-let noteList = null;
+let notesEl = null;
+let noteGrid = null;
+let titleEl = null;
 let noteEl = null;
 
-const currentNote = () => notes.find((n) => n.id === activeNote);
-
-/** First non-empty line, which doubles as the note's title. */
-function noteTitle(note) {
-  const line = note.text.split("\n").find((l) => l.trim());
-  return line ? line.trim().slice(0, 60) : "Empty note";
-}
+const openNoteData = () => notes.find((n) => n.id === openId);
+const isBlank = (n) => !n.title.trim() && !n.text.trim();
 
 function saveNotes() {
   save("notes", notes);
-  save("noteActive", activeNote);
 }
 
-function openNote(id, focus = false) {
-  activeNote = id;
-  save("noteActive", activeNote);
-  noteEl.value = currentNote().text;
+function openNote(id, focus) {
+  openId = id;
+  const note = openNoteData();
+  titleEl.value = note.title;
+  noteEl.value = note.text;
+  notesEl.dataset.view = "editor";
+  focus?.focus();
+}
+
+/** Back to the cards. A note left with nothing in it is dropped. */
+function closeNote() {
+  const note = openNoteData();
+  if (note && isBlank(note)) notes = notes.filter((n) => n !== note);
+  openId = null;
+  saveNotes();
+  notesEl.dataset.view = "grid";
+  document.activeElement?.blur();
   renderNotes();
-  if (focus) noteEl.focus();
+}
+
+function deleteNote(id) {
+  notes = notes.filter((n) => n.id !== id);
+  saveNotes();
+  if (id === openId) closeNote();
+  else renderNotes();
 }
 
 export function initNotes() {
+  notesEl = document.getElementById("notes");
+  noteGrid = document.getElementById("note-grid");
+  titleEl = document.getElementById("note-title");
   noteEl = document.getElementById("note");
-  noteList = document.getElementById("note-list");
-  noteEl.value = currentNote().text;
 
   let timer = null;
-  noteEl.addEventListener("input", () => {
-    currentNote().text = noteEl.value;
-    // Only the active title can change while typing.
-    const title = noteList.querySelector(".note-item.is-active .note-title");
-    if (title) title.textContent = noteTitle(currentNote());
+  const edited = () => {
+    const note = openNoteData();
+    if (!note) return;
+    note.title = titleEl.value;
+    note.text = noteEl.value;
+    note.updated = Date.now();
     clearTimeout(timer);
     timer = setTimeout(saveNotes, 300);
+  };
+  titleEl.addEventListener("input", edited);
+  noteEl.addEventListener("input", edited);
+
+  // Enter in the title moves on to the text, Escape goes back to the cards.
+  titleEl.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      noteEl.focus();
+    }
+  });
+  notesEl.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && openId !== null) closeNote();
   });
 
   document.getElementById("note-add").addEventListener("click", () => {
-    // Reuse an untouched empty note instead of piling them up.
-    const blank = notes.find((n) => !n.text.trim());
-    if (blank) return openNote(blank.id, true);
-    const note = { id: newId(), text: "" };
+    const note = { id: newId(), title: "", text: "", updated: Date.now() };
     notes.unshift(note);
-    saveNotes();
-    openNote(note.id, true);
+    openNote(note.id, titleEl);
+  });
+  document.getElementById("note-back").addEventListener("click", closeNote);
+  document.getElementById("note-delete").addEventListener("click", () => deleteNote(openId));
+
+  noteGrid.addEventListener("click", (e) => {
+    const card = e.target.closest(".note-card");
+    if (!card) return;
+    const id = Number(card.dataset.id);
+    if (e.target.closest("[data-act=delete]")) return deleteNote(id);
+    openNote(id, noteEl);
   });
 
-  noteList.addEventListener("click", (e) => {
-    const item = e.target.closest(".note-item");
-    if (!item) return;
-    const id = Number(item.dataset.id);
-    if (e.target.closest("[data-act=delete]")) {
-      const index = notes.findIndex((n) => n.id === id);
-      notes.splice(index, 1);
-      // There is always at least one note to type into.
-      if (notes.length === 0) notes.push({ id: newId(), text: "" });
-      if (id === activeNote) activeNote = notes[Math.min(index, notes.length - 1)].id;
-      saveNotes();
-      openNote(activeNote);
-      return;
-    }
-    openNote(id, true);
-  });
-
+  // Old single notes may be empty; don't show them as blank cards.
+  notes = notes.filter((n) => !isBlank(n));
+  saveNotes();
   renderNotes();
 }
 
 export function renderNotes() {
-  if (!noteList) return;
-  noteList.innerHTML = notes
+  if (!noteGrid) return;
+  if (notes.length === 0) {
+    noteGrid.innerHTML = `<li class="empty">No notes yet. Add one with “New note”.</li>`;
+    return;
+  }
+  noteGrid.innerHTML = notes
     .map(
       (n) => `
-      <li class="note-item ${n.id === activeNote ? "is-active" : ""}" data-id="${n.id}">
-        <span class="note-title">${escapeHtml(noteTitle(n))}</span>
+      <li class="note-card" data-id="${n.id}" title="Open">
+        ${n.title.trim() ? `<strong class="note-card-title">${escapeHtml(n.title)}</strong>` : ""}
+        <p class="note-card-text">${escapeHtml(n.text.trim() || "")}</p>
         <button class="icon-btn danger" data-act="delete" title="Delete note">${icon("close")}</button>
       </li>`
     )

@@ -11,6 +11,31 @@ let changed = () => {};
 
 export const media = () => state;
 
+// When playback last stopped, so the slim bar keeps its controls for a while
+// after pausing and the music can be resumed from there.
+let pausedAt = 0;
+const KEEP_CONTROLS_MS = 5 * 60_000;
+
+function setState(next) {
+  if (state.playing && !next.playing) pausedAt = Date.now();
+  state = next;
+  render();
+  changed();
+}
+
+/** Music is playing, or was paused only a few minutes ago. */
+export function hasControls() {
+  if (!state.hasSession) return false;
+  return state.playing || Date.now() - pausedAt < KEEP_CONTROLS_MS;
+}
+
+/** Play/pause, next or previous, from the media page or the slim bar. */
+export function control(action) {
+  call("media_control", { action }).catch(() => {});
+  // Feel instant; the real state follows from the event.
+  if (action === "toggle") setState({ ...state, playing: !state.playing });
+}
+
 // Shown when a player shares no artwork, or the artwork fails to load: a
 // music note on the theme's accent, so it always matches the current theme.
 const NOTE_ART = `<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M9 17.5a3 3 0 1 1-2-2.83V5.5l12-2.5v11.5a3 3 0 1 1-2-2.83V7.6l-8 1.66z"/></svg>`;
@@ -49,26 +74,13 @@ export async function initMedia(onChange) {
 
   pageEl.addEventListener("click", (e) => {
     const btn = e.target.closest("button[data-media]");
-    if (!btn) return;
-    call("media_control", { action: btn.dataset.media }).catch(() => {});
-    // Feel instant; the real state follows from the event.
-    if (btn.dataset.media === "toggle") {
-      state = { ...state, playing: !state.playing };
-      render();
-      changed();
-    }
+    if (btn) control(btn.dataset.media);
   });
 
   render();
   if (!inTauri) return;
-  await on("media://update", (next) => {
-    state = next;
-    render();
-    changed();
-  });
-  state = (await call("media_state")) ?? state;
-  render();
-  changed();
+  await on("media://update", setState);
+  setState((await call("media_state")) ?? state);
 }
 
 export function render() {

@@ -4,17 +4,19 @@ A small, open-source companion that hangs from the top edge of your Windows
 screen. Hover it and it opens; move away and it tucks itself back in.
 
 > **Status: early work in progress.** Media controls, named stopwatches and
-> countdowns, notes, to-dos, settings and five themes work. Still to come:
-> system notifications, start with Windows and other polish —
+> countdowns, notes, to-dos, settings and ten themes work. Still to come:
+> system notifications and other polish —
 > see [`PLAN.md`](PLAN.md) for the roadmap.
 
 ## Features
 
 - **Media controls** — see what's playing and play / pause / skip, from any
-  player Windows knows about (Spotify, Apple Music, browsers). When a player
-  shares no artwork, a music-note cover in the theme's colours stands in.
-- **Notes** — as many as you like, titled by their first line and saved as
-  you type.
+  player Windows knows about (Spotify, Apple Music, browsers). While music
+  plays, previous / play-pause / next sit right on the slim bar too, in the
+  full and the minimal look. When a player shares no artwork, a music-note
+  cover in the theme's colours stands in.
+- **Notes** — as many as you like, shown as cards, each with an optional
+  title and saved as you type.
 - **To-do list** — add, tick off, delete.
 - **Countdowns** — as many as you like, each with a name: either a length
   ("25 minutes") or a clock time ("until 18:30"). When one ends the

@@ -212,6 +212,7 @@ function initDrag() {
   const bar = document.getElementById("bar");
   bar.addEventListener("mousedown", (down) => {
     if (down.button !== 0 || look.locked || !inTauri) return;
+    if (down.target.closest("#bar-controls")) return;
     const move = async (e) => {
       if (!(e.buttons & 1)) return stop();
       if (Math.hypot(e.clientX - down.clientX, e.clientY - down.clientY) < DRAG_THRESHOLD) return;
