@@ -1,8 +1,9 @@
 /* ==========================================================================
    Themes
-   Each theme sets colours, fonts, shapes and icon stroke style. They are
-   scoped to [data-theme] so the theme tiles in Settings can preview
-   themselves with their own variables.
+   Each theme sets colours, fonts, shapes and icon stroke style, and comes
+   in a dark and a light mode ([data-mode]). They are scoped to
+   [data-theme] so the theme tiles in Settings can preview themselves with
+   their own variables.
    ========================================================================== */
 
 [data-theme="lagoon"] {
@@ -128,6 +129,291 @@
   --glow: rgba(255, 122, 217, 0.6);
   --tab-transform: none;
   --tab-spacing: 0;
+}
+
+[data-theme="frost"] {
+  --radius: 18px;
+  --radius-sm: 9px;
+  --font: "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
+  --font-num: "Segoe UI Variable Display", "Segoe UI", system-ui, sans-serif;
+  --icon-stroke: 1.75;
+  --icon-cap: round;
+  --icon-join: round;
+  --dot-radius: 50%;
+  --dot-rotate: 0deg;
+  --tab-transform: none;
+  --tab-spacing: 0.01em;
+}
+
+[data-theme="moss"] {
+  --radius: 20px;
+  --radius-sm: 10px;
+  --font: "Candara", "Segoe UI", system-ui, sans-serif;
+  --font-num: "Candara", "Segoe UI", system-ui, sans-serif;
+  --icon-stroke: 2;
+  --icon-cap: round;
+  --icon-join: round;
+  --dot-radius: 50% 0;
+  --dot-rotate: 0deg;
+  --tab-transform: none;
+  --tab-spacing: 0;
+}
+
+[data-theme="graphite"] {
+  --radius: 12px;
+  --radius-sm: 6px;
+  --font: "Segoe UI", system-ui, sans-serif;
+  --font-num: "Segoe UI Semibold", "Segoe UI", system-ui, sans-serif;
+  --icon-stroke: 1.5;
+  --icon-cap: butt;
+  --icon-join: miter;
+  --dot-radius: 1px;
+  --dot-rotate: 0deg;
+  --tab-transform: uppercase;
+  --tab-spacing: 0.08em;
+}
+
+[data-theme="sakura"] {
+  --radius: 30px;
+  --radius-sm: 16px;
+  --font: "Segoe UI", system-ui, sans-serif;
+  --font-num: "Segoe UI Light", "Segoe UI", system-ui, sans-serif;
+  --icon-stroke: 2;
+  --icon-cap: round;
+  --icon-join: round;
+  --dot-radius: 50%;
+  --dot-rotate: 0deg;
+  --tab-transform: none;
+  --tab-spacing: 0;
+}
+
+[data-theme="citrus"] {
+  --radius: 10px;
+  --radius-sm: 5px;
+  --font: "Verdana", "Segoe UI", system-ui, sans-serif;
+  --font-num: "Verdana", "Segoe UI", system-ui, sans-serif;
+  --icon-stroke: 2.4;
+  --icon-cap: round;
+  --icon-join: round;
+  --dot-radius: 2px;
+  --dot-rotate: 45deg;
+  --tab-transform: uppercase;
+  --tab-spacing: 0.03em;
+}
+
+/* ---------- dark and light variants ----------
+   Every theme comes in both modes. The blocks above hold each theme's
+   shapes, fonts and its original colours; these set the colours of the
+   other mode (and both modes for the newer themes). */
+
+[data-theme="lagoon"][data-mode="light"] {
+  --bg: rgba(240, 250, 250, 0.95);
+  --surface: rgba(10, 60, 60, 0.05);
+  --surface-hover: rgba(13, 148, 136, 0.14);
+  --fg: #0f2a2d;
+  --muted: #5b7479;
+  --accent: #0d9488;
+  --accent-fg: #ffffff;
+  --danger: #d64545;
+  --line: rgba(10, 60, 60, 0.12);
+  --shadow: 0 12px 30px rgba(10, 50, 50, 0.22);
+  --glow: rgba(13, 148, 136, 0.45);
+}
+
+[data-theme="ember"][data-mode="light"] {
+  --bg: rgba(255, 244, 234, 0.96);
+  --surface: rgba(160, 70, 10, 0.06);
+  --surface-hover: rgba(234, 106, 20, 0.16);
+  --fg: #3a1d0c;
+  --muted: #9a7158;
+  --accent: #e2600f;
+  --accent-fg: #ffffff;
+  --danger: #d43a2f;
+  --line: rgba(160, 70, 10, 0.14);
+  --shadow: 0 12px 30px rgba(90, 40, 10, 0.22);
+  --glow: rgba(226, 96, 15, 0.45);
+}
+
+[data-theme="paper"][data-mode="dark"] {
+  --bg: rgba(34, 30, 26, 0.96);
+  --surface: rgba(255, 240, 220, 0.05);
+  --surface-hover: rgba(142, 166, 255, 0.16);
+  --fg: #efe7da;
+  --muted: #a39886;
+  --accent: #8ea6ff;
+  --accent-fg: #141a33;
+  --danger: #ff7b6e;
+  --line: rgba(255, 240, 220, 0.1);
+  --shadow: 0 12px 30px rgba(0, 0, 0, 0.5);
+  --glow: rgba(142, 166, 255, 0.45);
+}
+
+[data-theme="terminal"][data-mode="light"] {
+  --bg: rgba(236, 247, 236, 0.97);
+  --surface: rgba(0, 90, 30, 0.05);
+  --surface-hover: rgba(0, 140, 50, 0.12);
+  --fg: #0b3d1a;
+  --muted: #4d7a5a;
+  --accent: #0a8f35;
+  --accent-fg: #ffffff;
+  --danger: #c62828;
+  --line: rgba(0, 90, 30, 0.2);
+  --shadow: 0 0 0 1px rgba(10, 143, 53, 0.3), 0 10px 24px rgba(0, 40, 10, 0.18);
+  --glow: rgba(10, 143, 53, 0.4);
+}
+
+[data-theme="aurora"][data-mode="light"] {
+  --bg: linear-gradient(135deg, rgba(246, 236, 255, 0.96), rgba(226, 238, 255, 0.96));
+  --surface: rgba(60, 20, 120, 0.06);
+  --surface-hover: rgba(214, 51, 168, 0.14);
+  --fg: #2a1648;
+  --muted: #75679a;
+  --accent: #d633a8;
+  --accent-fg: #ffffff;
+  --danger: #e0335a;
+  --line: rgba(60, 20, 120, 0.12);
+  --shadow: 0 12px 30px rgba(60, 20, 120, 0.22);
+  --glow: rgba(214, 51, 168, 0.45);
+}
+
+[data-theme="frost"][data-mode="dark"] {
+  --bg: rgba(14, 20, 34, 0.94);
+  --surface: rgba(160, 200, 255, 0.06);
+  --surface-hover: rgba(125, 190, 255, 0.18);
+  --fg: #e6f0ff;
+  --muted: #8c9cb8;
+  --accent: #7dbeff;
+  --accent-fg: #0a1a2e;
+  --danger: #ff7a85;
+  --line: rgba(160, 200, 255, 0.1);
+  --shadow: 0 14px 34px rgba(0, 8, 24, 0.5);
+  --glow: rgba(125, 190, 255, 0.55);
+}
+
+[data-theme="frost"][data-mode="light"] {
+  --bg: rgba(241, 246, 253, 0.96);
+  --surface: rgba(20, 60, 120, 0.05);
+  --surface-hover: rgba(37, 118, 214, 0.13);
+  --fg: #13243d;
+  --muted: #62748f;
+  --accent: #2576d6;
+  --accent-fg: #ffffff;
+  --danger: #d43d4f;
+  --line: rgba(20, 60, 120, 0.12);
+  --shadow: 0 12px 30px rgba(20, 50, 100, 0.2);
+  --glow: rgba(37, 118, 214, 0.4);
+}
+
+[data-theme="moss"][data-mode="dark"] {
+  --bg: rgba(20, 26, 18, 0.95);
+  --surface: rgba(190, 220, 150, 0.06);
+  --surface-hover: rgba(160, 200, 100, 0.18);
+  --fg: #eef3e4;
+  --muted: #9aa88a;
+  --accent: #a3c95f;
+  --accent-fg: #1a2408;
+  --danger: #ff7a5c;
+  --line: rgba(190, 220, 150, 0.1);
+  --shadow: 0 14px 34px rgba(5, 10, 0, 0.5);
+  --glow: rgba(163, 201, 95, 0.5);
+}
+
+[data-theme="moss"][data-mode="light"] {
+  --bg: rgba(244, 246, 236, 0.96);
+  --surface: rgba(50, 70, 20, 0.05);
+  --surface-hover: rgba(86, 122, 30, 0.13);
+  --fg: #222b16;
+  --muted: #6e7a5c;
+  --accent: #56791e;
+  --accent-fg: #ffffff;
+  --danger: #c2412a;
+  --line: rgba(50, 70, 20, 0.13);
+  --shadow: 0 12px 30px rgba(40, 50, 20, 0.2);
+  --glow: rgba(86, 122, 30, 0.4);
+}
+
+[data-theme="graphite"][data-mode="dark"] {
+  --bg: rgba(18, 18, 20, 0.95);
+  --surface: rgba(255, 255, 255, 0.05);
+  --surface-hover: rgba(255, 255, 255, 0.1);
+  --fg: #f2f2f2;
+  --muted: #8d8d93;
+  --accent: #f2f2f2;
+  --accent-fg: #121214;
+  --danger: #ff6159;
+  --line: rgba(255, 255, 255, 0.1);
+  --shadow: 0 12px 30px rgba(0, 0, 0, 0.5);
+  --glow: rgba(255, 255, 255, 0.35);
+}
+
+[data-theme="graphite"][data-mode="light"] {
+  --bg: rgba(248, 248, 249, 0.97);
+  --surface: rgba(0, 0, 0, 0.04);
+  --surface-hover: rgba(0, 0, 0, 0.08);
+  --fg: #1b1b1e;
+  --muted: #77777e;
+  --accent: #1b1b1e;
+  --accent-fg: #ffffff;
+  --danger: #d6332b;
+  --line: rgba(0, 0, 0, 0.1);
+  --shadow: 0 10px 26px rgba(0, 0, 0, 0.18);
+  --glow: rgba(0, 0, 0, 0.25);
+}
+
+[data-theme="sakura"][data-mode="dark"] {
+  --bg: rgba(36, 20, 30, 0.95);
+  --surface: rgba(255, 180, 210, 0.07);
+  --surface-hover: rgba(255, 143, 184, 0.2);
+  --fg: #ffeef5;
+  --muted: #c19aac;
+  --accent: #ff8fb8;
+  --accent-fg: #3a0a1e;
+  --danger: #ff6b6b;
+  --line: rgba(255, 180, 210, 0.12);
+  --shadow: 0 14px 34px rgba(30, 0, 15, 0.5);
+  --glow: rgba(255, 143, 184, 0.55);
+}
+
+[data-theme="sakura"][data-mode="light"] {
+  --bg: rgba(255, 243, 247, 0.96);
+  --surface: rgba(140, 30, 70, 0.05);
+  --surface-hover: rgba(224, 72, 128, 0.13);
+  --fg: #3d1426;
+  --muted: #946a7c;
+  --accent: #e04880;
+  --accent-fg: #ffffff;
+  --danger: #d0342c;
+  --line: rgba(140, 30, 70, 0.12);
+  --shadow: 0 12px 30px rgba(120, 30, 60, 0.2);
+  --glow: rgba(224, 72, 128, 0.4);
+}
+
+[data-theme="citrus"][data-mode="dark"] {
+  --bg: rgba(24, 22, 12, 0.95);
+  --surface: rgba(255, 220, 80, 0.06);
+  --surface-hover: rgba(255, 210, 50, 0.18);
+  --fg: #fff8dc;
+  --muted: #b3a87a;
+  --accent: #ffd23f;
+  --accent-fg: #2a2200;
+  --danger: #ff6a4d;
+  --line: rgba(255, 220, 80, 0.12);
+  --shadow: 0 14px 34px rgba(10, 8, 0, 0.55);
+  --glow: rgba(255, 210, 63, 0.55);
+}
+
+[data-theme="citrus"][data-mode="light"] {
+  --bg: rgba(255, 251, 234, 0.97);
+  --surface: rgba(120, 90, 0, 0.05);
+  --surface-hover: rgba(214, 160, 0, 0.15);
+  --fg: #2e2600;
+  --muted: #857a4d;
+  --accent: #b07e00;
+  --accent-fg: #ffffff;
+  --danger: #cc3d22;
+  --line: rgba(120, 90, 0, 0.14);
+  --shadow: 0 12px 30px rgba(90, 70, 0, 0.2);
+  --glow: rgba(192, 138, 0, 0.4);
 }
 
 /* ==========================================================================
@@ -566,7 +852,7 @@ button {
   color-scheme: dark;
 }
 
-[data-theme="paper"] .field[type="time"] {
+[data-mode="light"] .field[type="time"] {
   color-scheme: light;
 }
 
@@ -949,6 +1235,10 @@ button {
 }
 
 /* Each tile carries its own data-theme, so it renders in that theme. */
+.mode-chips {
+  margin-bottom: 8px;
+}
+
 .theme-tile {
   display: flex;
   flex-direction: column;
