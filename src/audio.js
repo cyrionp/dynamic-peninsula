@@ -6,6 +6,7 @@ import { call, on, inTauri } from "./tauri.js";
 import { icon } from "./icons.js";
 import { escapeHtml } from "./util.js";
 import { getSettings } from "./settings.js";
+import { getLook } from "./layout.js";
 
 let devices = [];
 let pods = null;
@@ -16,6 +17,20 @@ let changed = () => {};
 // The pop-up currently on the slim bar: what it is about, and until when.
 let notice = null;
 const NOTICE_MS = 4000;
+
+// AirPods report their in-ear state from both earbuds, and the bits flicker
+// for a moment while they hand over or settle in. A change only counts once
+// it has held this long, and pops up at most this often.
+const EARS_SETTLE_MS = 3000;
+const EARS_GAP_MS = 20_000;
+// Windows can drop and re-add the same headset (a Bluetooth hiccup, AirPods
+// hopping to the phone and back); that isn't worth a pop-up every time.
+const CONNECT_GAP_MS = 60_000;
+
+let ears = null; // the settled in-ear state, e.g. "truefalse"
+let pendingEars = null;
+let earsTimer = null;
+const lastPopup = { connected: 0, ears: 0 };
 
 const current = () => devices.find((d) => d.isDefault) ?? null;
 
@@ -57,6 +72,9 @@ function earText(p) {
 
 function raise(kind) {
   if (!getSettings().headphoneAlerts) return;
+  const now = Date.now();
+  if (now - lastPopup[kind] < (kind === "ears" ? EARS_GAP_MS : CONNECT_GAP_MS)) return;
+  lastPopup[kind] = now;
   notice = { kind, until: Date.now() + NOTICE_MS };
   setTimeout(() => {
     if (notice && Date.now() >= notice.until) {
@@ -70,6 +88,8 @@ function raise(kind) {
 /** What the slim bar shows while a pop-up is up; null otherwise. Worked out
  * on every paint, so battery that arrives a moment later still shows up. */
 export function noticeView() {
+  // The minimal pill is too small for it; it stays on the clock or music.
+  if (getLook().minimal) return null;
   if (!notice || Date.now() >= notice.until) return null;
   const device = current();
   if (!device) return null;
@@ -82,19 +102,37 @@ function setDevices(next) {
   const before = current();
   devices = next?.devices ?? [];
   const after = current();
-  // Only a switch to headphones pops up; speakers are just the output.
-  if (before && after && before.id !== after.id && (after.bluetooth || ["headphones", "headset"].includes(after.kind))) {
-    raise("connected");
-  }
+  // Only a switch to headphones pops up; speakers are just the output. The
+  // same headset coming back (or moving to its hands-free endpoint) doesn't.
+  const headphones = after && (after.bluetooth || ["headphones", "headset"].includes(after.kind));
+  if (before && headphones && before.id !== after.id && shortName(after) !== shortName(before)) raise("connected");
   render();
   changed();
 }
 
+const earsOf = (p) => (p?.fresh ? `${p.left.inEar}${p.right.inEar}` : null);
+
+/** Pops up when the in-ear state changed and has stayed that way. */
+function settleEars() {
+  const now = earsOf(pods);
+  if (now === pendingEars) return; // already waiting on this one
+  clearTimeout(earsTimer);
+  pendingEars = now;
+  if (now === ears) return; // flickered back
+  if (now === null || ears === null) {
+    // Just appeared, or went quiet: remember it without a pop-up.
+    ears = now;
+    return;
+  }
+  earsTimer = setTimeout(() => {
+    ears = now;
+    if (isAirPods(current())) raise("ears");
+  }, EARS_SETTLE_MS);
+}
+
 function setPods(next) {
-  const before = pods;
   pods = next;
-  const ears = (p) => (p?.fresh ? `${p.left.inEar}${p.right.inEar}` : null);
-  if (isAirPods(current()) && next?.fresh && before?.fresh && ears(before) !== ears(next)) raise("ears");
+  settleEars();
   render();
   changed();
 }
