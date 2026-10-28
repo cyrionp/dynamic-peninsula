@@ -23,6 +23,7 @@ import {
 import { initNotes, renderNotes, initTodos, renderTodos } from "./lists.js";
 import { initAudio, noticeView, render as renderAudio } from "./audio.js";
 import { initLayout } from "./layout.js";
+import { initIsland, paintIsland } from "./island.js";
 import { initWeather, current as currentWeather } from "./weather.js";
 
 const peninsula = document.getElementById("peninsula");
@@ -47,6 +48,8 @@ function reportHitRect() {
   });
 }
 new ResizeObserver(reportHitRect).observe(peninsula);
+// Tucking away only moves it, which the observer doesn't see.
+peninsula.addEventListener("transitionend", reportHitRect);
 
 /* ---------- open / close on hover ---------- */
 
@@ -117,10 +120,13 @@ function clockView() {
   const time = formatClock(now, clock24);
   if (bar === "date") {
     const day = now.toLocaleDateString([], { weekday: "short", day: "numeric", month: "short" });
-    return { lead: "dot", text: day, value: time };
+    return { kind: "clock", lead: "dot", text: day, value: time };
   }
-  return { lead: "dot", text: "", value: time };
+  return { kind: "clock", lead: "dot", text: "", value: time };
 }
+
+// The clock as a stand-in when nothing else is going on.
+const idleView = () => ({ ...clockView(), idle: true });
 
 // The weather sits next to the clock, so the time never goes missing.
 function weatherView() {
@@ -131,18 +137,19 @@ function weatherView() {
 
 function countdownView() {
   const cd = countdowns.soonest();
-  return cd && { lead: "countdown", text: cd.name, value: formatRemaining(countdowns.remaining(cd)), live: true };
+  return cd && { kind: "countdown", lead: "countdown", text: cd.name, value: formatRemaining(countdowns.remaining(cd)), live: true };
 }
 
 function stopwatchView() {
   const sw = stopwatches.leadingRunning();
-  return sw && { lead: "stopwatch", text: sw.name, value: formatElapsedShort(stopwatches.elapsed(sw)), live: true };
+  return sw && { kind: "stopwatch", lead: "stopwatch", text: sw.name, value: formatElapsedShort(stopwatches.elapsed(sw)), live: true };
 }
 
 function mediaView(onlyPlaying) {
   const m = media();
   if (!m.hasSession || (onlyPlaying && !m.playing)) return null;
   return {
+    kind: "media",
     lead: { cover: m.thumbnail || null },
     text: [m.title, m.artist].filter(Boolean).join(" · ") || prettySource(m.source),
     value: "",
@@ -197,20 +204,20 @@ document.getElementById("bar").addEventListener(
 
 function volumeView() {
   const { level, muted } = volumeShown;
-  return { lead: muted ? "mute" : "volume", text: muted ? "Muted" : "Volume", value: `${Math.round(level * 100)}%` };
+  return { kind: "volume", lead: muted ? "mute" : "volume", text: muted ? "Muted" : "Volume", value: `${Math.round(level * 100)}%` };
 }
 
 function barView() {
   if (volumeShown) return volumeView();
   const headphones = noticeView();
-  if (headphones) return headphones;
+  if (headphones) return { ...headphones, kind: "notice" };
   switch (getSettings().bar) {
     case "media":
-      return mediaView(false) ?? clockView();
+      return mediaView(false) ?? idleView();
     case "countdown":
-      return countdownView() ?? clockView();
+      return countdownView() ?? idleView();
     case "stopwatch":
-      return stopwatchView() ?? clockView();
+      return stopwatchView() ?? idleView();
     case "weather":
       return weatherView() ?? clockView();
     case "clock":
@@ -234,7 +241,7 @@ function smartView() {
     const view = item.on && SMART_VIEWS[item.id]?.();
     if (view) return view;
   }
-  return clockView();
+  return idleView();
 }
 
 let lastLead = "";
@@ -261,6 +268,10 @@ function paintBar(force = false) {
   paintControls(force);
   peninsula.classList.toggle("bar-media-paused", view.playing === false);
   peninsula.classList.toggle("bar-has-text", Boolean(view.text));
+  // Nothing but the clock: tuck it away if asked to. Hovering its spot still
+  // opens it.
+  peninsula.classList.toggle("is-tucked", Boolean(getSettings().hideIdle && view.idle));
+  paintIsland(view, media());
 }
 
 let lastControls = null;
@@ -398,6 +409,7 @@ initNotes();
 initTodos();
 initMedia(() => paintBar());
 initAudio(() => paintBar());
+initIsland(() => paintBar(true));
 initWeather((configChanged) => {
   // Switching it on or off adds or removes it from the Smart list.
   if (configChanged) renderSettings();
