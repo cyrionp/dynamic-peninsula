@@ -15,6 +15,7 @@ import {
   media,
   hasControls,
   control as mediaControl,
+  canSkip,
   prettySource,
   coverHtml,
   guardCovers,
@@ -24,7 +25,6 @@ import { initNotes, renderNotes, initTodos, renderTodos } from "./lists.js";
 import { initAudio, noticeView, render as renderAudio } from "./audio.js";
 import { initLayout } from "./layout.js";
 import { initIsland, paintIsland } from "./island.js";
-import { initWeather, current as currentWeather } from "./weather.js";
 
 const peninsula = document.getElementById("peninsula");
 const barLead = document.getElementById("bar-lead");
@@ -128,13 +128,6 @@ function clockView() {
 // The clock as a stand-in when nothing else is going on.
 const idleView = () => ({ ...clockView(), idle: true });
 
-// The weather sits next to the clock, so the time never goes missing.
-function weatherView() {
-  const w = currentWeather();
-  if (!w) return null;
-  return { lead: w.icon, text: `${w.temp} ${w.place}`, value: formatClock(new Date(), getSettings().clock24) };
-}
-
 function countdownView() {
   const cd = countdowns.soonest();
   return cd && { kind: "countdown", lead: "countdown", text: cd.name, value: formatRemaining(countdowns.remaining(cd)), live: true };
@@ -218,8 +211,6 @@ function barView() {
       return countdownView() ?? idleView();
     case "stopwatch":
       return stopwatchView() ?? idleView();
-    case "weather":
-      return weatherView() ?? clockView();
     case "clock":
     case "date":
       return clockView();
@@ -232,7 +223,6 @@ const SMART_VIEWS = {
   countdown: countdownView,
   media: () => mediaView(true),
   stopwatch: stopwatchView,
-  weather: weatherView,
 };
 
 // The first item in the user's order that has something to show.
@@ -278,15 +268,19 @@ let lastControls = null;
 
 function paintControls(force) {
   const show = hasControls();
-  const key = show ? `${media().playing}` : "";
+  const skip = show && canSkip();
+  const key = show ? `${media().playing}:${skip}` : "";
   peninsula.classList.toggle("bar-has-controls", show);
+  peninsula.classList.toggle("bar-has-skip", skip);
   if (!force && key === lastControls) return;
   lastControls = key;
   const button = (action, name, title) =>
     `<button class="bar-btn" data-media="${action}" title="${title}">${icon(name)}</button>`;
   barControls.innerHTML = show
     ? button("previous", "previous", "Previous") +
+      (skip ? button("back", "back15", "Back 15 seconds") : "") +
       button("toggle", media().playing ? "pause" : "play", media().playing ? "Pause" : "Play") +
+      (skip ? button("forward", "forward15", "Forward 15 seconds") : "") +
       button("next", "next", "Next")
     : "";
 }
@@ -410,11 +404,6 @@ initTodos();
 initMedia(() => paintBar());
 initAudio(() => paintBar());
 initIsland(() => paintBar(true));
-initWeather((configChanged) => {
-  // Switching it on or off adds or removes it from the Smart list.
-  if (configChanged) renderSettings();
-  paintBar(true);
-});
 initLayout({
   onLayout: reportHitRect,
   // Locked: it can't be hovered any more, so fold it away.

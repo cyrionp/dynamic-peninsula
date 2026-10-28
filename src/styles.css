@@ -648,6 +648,15 @@ button {
   width: calc(var(--bar-w) + 3 * var(--bar-btn));
 }
 
+/* With the 15 s back / forward buttons there are five. */
+.peninsula.bar-has-skip[data-state="collapsed"] {
+  width: calc(var(--bar-w) + 5 * var(--bar-btn) - 12px);
+}
+
+.peninsula.is-minimal.bar-has-skip[data-state="collapsed"] {
+  width: calc(var(--bar-w) + 5 * var(--bar-btn));
+}
+
 .bar-btn {
   width: var(--bar-btn);
   height: var(--bar-btn);
@@ -666,6 +675,13 @@ button {
 .bar-btn .i {
   width: calc(var(--bar-btn) * 0.5);
   height: calc(var(--bar-btn) * 0.5);
+}
+
+/* A touch larger, so the "15" inside stays legible. */
+.bar-btn[data-media="back"] .i,
+.bar-btn[data-media="forward"] .i {
+  width: calc(var(--bar-btn) * 0.68);
+  height: calc(var(--bar-btn) * 0.68);
 }
 
 .bar-btn[data-media="toggle"] {
@@ -1620,8 +1636,7 @@ button {
 }
 
 /* The size and look section is rendered into its own box. */
-.settings #layout-box h3:first-child,
-.settings #weather-box h3:first-child {
+.settings #layout-box h3:first-child {
   margin-top: 10px;
 }
 
@@ -1975,18 +1990,6 @@ input[type="range"] {
     animation: none;
     transition: none;
   }
-}
-
-/* Weather: the city field and its button on one line. */
-.weather-form {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin: 4px 0;
-}
-
-.weather-form .field {
-  flex: 1;
 }
 
 /* ==========================================================================

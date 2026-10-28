@@ -62,8 +62,10 @@ const panelSize = () => PANEL_SIZES.find((s) => s.id === look.panel) ?? PANEL_SI
 function frame() {
   const bar = barSize();
   const panel = panelSize();
+  // The bar grows by up to five media buttons while music plays.
+  const barWithControls = bar.width + 5 * (bar.height - 10);
   return {
-    width: Math.max(bar.width, panel.width, ALERT.width) + PAD * 2,
+    width: Math.max(barWithControls, panel.width, ALERT.width) + PAD * 2,
     height: Math.max(bar.height, panel.height, ALERT.height) + PAD * 2,
   };
 }
