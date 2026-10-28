@@ -19,6 +19,8 @@ const DEFAULTS = {
   volume: 0.6,
   // Pop up on the slim bar when headphones connect or an earbud goes in.
   headphoneAlerts: true,
+  // Tuck the peninsula away while it has nothing but the clock to show.
+  hideIdle: false,
   // What Smart shows, most important first; the clock fills in otherwise.
   smart: [
     { id: "countdown", on: true },
@@ -141,6 +143,7 @@ export function initSettings(onChange) {
 
   page.addEventListener("change", (e) => {
     if (e.target.id === "set-24h") update({ clock24: e.target.checked });
+    if (e.target.id === "set-hide-idle") update({ hideIdle: e.target.checked });
     if (e.target.dataset.smartToggle) {
       const id = e.target.dataset.smartToggle;
       update({ smart: settings.smart.map((s) => (s.id === id ? { ...s, on: e.target.checked } : s)) });
@@ -211,6 +214,11 @@ export function render() {
           <p class="hint">${smartHint}</p>`
         : `<p class="hint">${barHint}</p>`
     }
+    <label class="switch-row">
+      <span>Only show when there's something to show</span>
+      <input type="checkbox" class="switch" id="set-hide-idle" ${settings.hideIdle ? "checked" : ""} />
+    </label>
+    <p class="hint">Music, timers and pop-ups bring it out. Otherwise point at its spot to open it.</p>
 
     <div id="layout-box"></div>
 

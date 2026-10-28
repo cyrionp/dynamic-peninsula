@@ -46,9 +46,16 @@ screen. Hover it and it opens; move away and it tucks itself back in.
 - **Launch at startup** — optional, switched on in Settings.
 - **Settings & themes** — pick what the slim bar shows (smart, now playing,
   countdown, stopwatch, weather, clock, date; for Smart you set the order and what it
-  may show) and one of ten themes, each with a dark
+  may show) and one of eleven themes, each with a dark
   and a light mode: Lagoon, Ember, Paper, Terminal, Aurora, Frost, Moss,
-  Graphite, Sakura and Citrus.
+  Graphite, Sakura, Citrus and Island.
+- **Island theme** — looks and behaves like Apple's Dynamic Island: an empty
+  black notch while idle that springs open, artwork and a waveform in the
+  artwork's colour while music plays, a short peek at each new track, and
+  timers in orange. Always black, in either mode.
+- **Only show when needed** — an optional switch that tucks the peninsula away
+  while it has nothing but the clock to show; music, timers and pop-ups bring
+  it back, and pointing at its spot opens it.
 
 No accounts, no tracking. Everything is stored on your own computer; the
 only thing that goes online is the optional weather lookup (and the update check).

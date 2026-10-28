@@ -526,7 +526,8 @@ button {
     width 0.34s cubic-bezier(0.2, 0.9, 0.25, 1),
     height 0.34s cubic-bezier(0.2, 0.9, 0.25, 1),
     border-radius 0.34s ease,
-    opacity 0.2s ease;
+    opacity 0.2s ease,
+    transform 0.3s ease;
 }
 
 .peninsula[data-state="collapsed"] {
@@ -1600,6 +1601,11 @@ button {
   padding-right: 4px;
 }
 
+/* It scrolls; nothing in it should be squeezed to fit. */
+.settings > * {
+  flex-shrink: 0;
+}
+
 .settings h3 {
   font-size: 11px;
   font-weight: 600;
@@ -1981,4 +1987,341 @@ input[type="range"] {
 
 .weather-form .field {
   flex: 1;
+}
+
+/* ==========================================================================
+   Tucked away: "only show when there's something to show"
+   Docked, it slides up into the screen edge and leaves a sliver there to
+   hover; floating, it fades out where it stands.
+   ========================================================================== */
+
+.peninsula.is-tucked[data-state="collapsed"] {
+  opacity: 0;
+  transform: scale(0.85);
+}
+
+.stage[data-docked="true"] .peninsula {
+  transform-origin: top center;
+}
+
+.stage[data-docked="true"] .peninsula.is-tucked[data-state="collapsed"] {
+  transform: translateY(calc(3px - 100%));
+}
+
+/* The waveform belongs to the Island theme. */
+.bar-eq {
+  display: none;
+}
+
+/* ==========================================================================
+   Island: Apple's Dynamic Island
+   Pure black, no border or shadow, and springy. Idle it is an empty pill;
+   with something going on it grows sideways like the real one, art on the
+   left and a waveform or the time on the right. Always black, in either
+   mode. Behaviour that needs JavaScript is in island.js.
+   ========================================================================== */
+
+[data-theme="island"] {
+  --bg: #000;
+  --surface: rgba(255, 255, 255, 0.08);
+  --surface-hover: rgba(255, 255, 255, 0.15);
+  --fg: #fff;
+  --muted: rgba(235, 235, 245, 0.6);
+  --accent: #fff;
+  --accent-fg: #000;
+  --danger: #ff453a;
+  --line: rgba(255, 255, 255, 0.1);
+  --radius: 32px;
+  --radius-sm: 12px;
+  --font: "SF Pro Text", -apple-system, "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
+  --font-num: "SF Pro Display", -apple-system, "Segoe UI Variable Display", "Segoe UI", system-ui, sans-serif;
+  --icon-stroke: 2;
+  --icon-cap: round;
+  --icon-join: round;
+  --dot-radius: 50%;
+  --dot-rotate: 0deg;
+  --shadow: none;
+  --glow: rgba(255, 255, 255, 0.3);
+  --tab-transform: none;
+  --tab-spacing: 0;
+  /* Timers are orange, as on the iPhone. */
+  --live: #ff9f0a;
+  --on: #30d158;
+  /* A damped spring with a slight overshoot. */
+  --spring: linear(0, 0.045, 0.153, 0.292, 0.438, 0.576, 0.698, 0.8, 0.88, 0.941, 0.983, 1.012, 1.028, 1.036,
+      1.038, 1.036, 1.032, 1.027, 1.021, 1.016, 1.011, 1.007, 1.004, 1.002, 1);
+}
+
+[data-theme="island"] .dot {
+  box-shadow: none;
+}
+
+:root[data-theme="island"] .stage .peninsula {
+  border: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  /* Visible so the notch's curved ears can sit outside; the panel clips. */
+  overflow: visible;
+  transition:
+    width 0.6s var(--spring),
+    height 0.6s var(--spring),
+    border-radius 0.6s var(--spring),
+    transform 0.5s var(--spring),
+    opacity 0.3s ease;
+}
+
+/* Docked: a notch hanging from the screen edge, with ears curving into it. */
+:root[data-theme="island"] .stage[data-docked="true"] .peninsula[data-state="collapsed"] {
+  border-radius: 0 0 calc(var(--bar-h) * 0.42) calc(var(--bar-h) * 0.42);
+}
+
+:root[data-theme="island"] .stage[data-docked="true"] .peninsula::before,
+:root[data-theme="island"] .stage[data-docked="true"] .peninsula::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  width: 10px;
+  height: 10px;
+  pointer-events: none;
+}
+
+:root[data-theme="island"] .stage[data-docked="true"] .peninsula::before {
+  right: 100%;
+  background: radial-gradient(circle at 0 100%, transparent 9.5px, var(--bg) 10px);
+}
+
+:root[data-theme="island"] .stage[data-docked="true"] .peninsula::after {
+  left: 100%;
+  background: radial-gradient(circle at 100% 100%, transparent 9.5px, var(--bg) 10px);
+}
+
+/* Floating: the iPhone's capsule. */
+:root[data-theme="island"] .stage[data-docked="false"] .peninsula[data-state="collapsed"] {
+  border-radius: calc(var(--bar-h) / 2);
+}
+
+/* Idle it is just a black pill; activity widens it on both sides, and a
+   peek or a pop-up makes room for text. */
+:root[data-theme="island"] .stage .peninsula[data-state="collapsed"] {
+  width: calc(var(--bar-w) * 0.8 + var(--bar-h) * 2.2);
+}
+
+:root[data-theme="island"] .stage .peninsula[data-state="collapsed"][data-kind="idle"] {
+  width: calc(var(--bar-w) * 0.8);
+}
+
+:root[data-theme="island"] .stage .peninsula[data-state="collapsed"].island-peek,
+:root[data-theme="island"] .stage .peninsula[data-state="collapsed"][data-kind="notice"],
+:root[data-theme="island"] .stage .peninsula[data-state="collapsed"][data-kind="volume"] {
+  width: calc(var(--bar-w) * 1.5);
+}
+
+/* ---------- island: the compact bar ---------- */
+
+:root[data-theme="island"] .bar {
+  justify-content: space-between;
+  gap: 10px;
+  padding: 0 calc(var(--bar-h) * 0.28);
+  overflow: hidden;
+}
+
+:root[data-theme="island"] .bar > * {
+  transition: opacity 0.25s ease;
+}
+
+:root[data-theme="island"] .peninsula[data-state="collapsed"][data-kind="idle"] .bar > * {
+  opacity: 0;
+}
+
+/* The middle stays empty, like the camera's spot, unless there is text to show. */
+:root[data-theme="island"] .peninsula[data-state="collapsed"]:not(.island-peek):not([data-kind="notice"]):not([data-kind="volume"]) .bar-text {
+  display: none;
+}
+
+:root[data-theme="island"] .peninsula .bar-controls {
+  display: none;
+}
+
+:root[data-theme="island"] .bar-lead .lead-cover {
+  width: calc(var(--bar-h) - 12px);
+  height: calc(var(--bar-h) - 12px);
+  border-radius: 6px;
+}
+
+:root[data-theme="island"] .bar-value {
+  color: var(--fg);
+  font-weight: 600;
+}
+
+:root[data-theme="island"] .peninsula[data-kind="countdown"] .bar-lead,
+:root[data-theme="island"] .peninsula[data-kind="countdown"] .bar-value,
+:root[data-theme="island"] .peninsula[data-kind="stopwatch"] .bar-lead,
+:root[data-theme="island"] .peninsula[data-kind="stopwatch"] .bar-value {
+  color: var(--live);
+}
+
+:root[data-theme="island"] .peninsula[data-kind="media"] .bar-value {
+  display: none;
+}
+
+:root[data-theme="island"] .peninsula[data-kind="media"] .bar-eq {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  height: 42%;
+  flex: none;
+}
+
+.bar-eq i {
+  width: 3px;
+  height: 100%;
+  border-radius: 2px;
+  background: var(--art, var(--accent));
+  transform: scaleY(0.3);
+  transition: background 0.6s ease;
+  animation: island-eq 0.8s ease-in-out infinite alternate;
+}
+
+.bar-eq i:nth-child(2) {
+  animation-duration: 0.55s;
+  animation-delay: -0.2s;
+}
+
+.bar-eq i:nth-child(3) {
+  animation-duration: 0.95s;
+  animation-delay: -0.5s;
+}
+
+.bar-eq i:nth-child(4) {
+  animation-duration: 0.65s;
+  animation-delay: -0.1s;
+}
+
+.bar-eq i:nth-child(5) {
+  animation-duration: 0.85s;
+  animation-delay: -0.35s;
+}
+
+.bar-media-paused .bar-eq i {
+  animation: none;
+}
+
+@keyframes island-eq {
+  0% {
+    transform: scaleY(0.25);
+  }
+  100% {
+    transform: scaleY(1);
+  }
+}
+
+/* ---------- island: expanded ---------- */
+
+:root[data-theme="island"] .panel {
+  overflow: hidden;
+  border-radius: 0 0 var(--radius) var(--radius);
+  transform: scale(0.94);
+  transform-origin: top center;
+  filter: blur(8px);
+  transition:
+    opacity 0.2s ease,
+    transform 0.5s var(--spring),
+    filter 0.3s ease;
+}
+
+:root[data-theme="island"] .peninsula[data-state="expanded"] .panel {
+  transform: none;
+  filter: none;
+  transition-delay: 0.08s;
+}
+
+:root[data-theme="island"] .tab {
+  border: none;
+  border-radius: 999px;
+}
+
+:root[data-theme="island"] .tab.is-active {
+  color: var(--fg);
+  background: var(--surface-hover);
+}
+
+:root[data-theme="island"] .cover {
+  border-radius: 14px;
+  box-shadow: none;
+}
+
+:root[data-theme="island"] .media-source {
+  color: var(--muted);
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+:root[data-theme="island"] .media-title {
+  font-weight: 600;
+}
+
+:root[data-theme="island"] .media-controls .icon-btn {
+  background: transparent;
+  color: var(--fg);
+  border-radius: 50%;
+}
+
+:root[data-theme="island"] .media-controls .icon-btn:hover {
+  background: var(--surface);
+}
+
+:root[data-theme="island"] .media-controls .icon-btn.play .i {
+  width: 24px;
+  height: 24px;
+}
+
+:root[data-theme="island"] .media-progress .track {
+  background: linear-gradient(rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0.22)) center / 100% 5px no-repeat;
+}
+
+:root[data-theme="island"] .media-progress .fill {
+  height: 5px;
+  border-radius: 3px;
+  background: var(--fg);
+}
+
+:root[data-theme="island"] .switch:checked {
+  background: var(--on);
+}
+
+:root[data-theme="island"] .switch:checked::after {
+  background: #fff;
+}
+
+/* ---------- island: a countdown ends ---------- */
+
+:root[data-theme="island"] .alert-bell {
+  background: var(--live);
+  color: #000;
+}
+
+:root[data-theme="island"] .alert-text small {
+  color: var(--live);
+}
+
+:root[data-theme="island"] .alert-anim {
+  animation: island-pop 0.6s var(--spring);
+}
+
+@keyframes island-pop {
+  0% {
+    transform: scale(0.9);
+  }
+  100% {
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root[data-theme="island"] .stage .peninsula,
+  :root[data-theme="island"] .panel,
+  .bar-eq i {
+    animation: none;
+    transition: none;
+  }
 }

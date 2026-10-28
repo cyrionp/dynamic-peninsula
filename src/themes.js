@@ -1,4 +1,5 @@
-// The ten built-in themes, each with a dark and a light mode. Colours, fonts and shapes live in styles.css
+// The built-in themes, each with a dark and a light mode (Island is always
+// black, like the real one). Colours, fonts and shapes live in styles.css
 // under [data-theme="…"]; this list adds what JavaScript needs to know.
 
 export const THEMES = [
@@ -12,6 +13,8 @@ export const THEMES = [
   { id: "graphite", name: "Graphite", icons: "line", blurb: "Minimal monochrome" },
   { id: "sakura", name: "Sakura", icons: "solid", blurb: "Blossom pink, extra round" },
   { id: "citrus", name: "Citrus", icons: "solid", blurb: "Sunny yellow, punchy" },
+  // Looks and behaves like Apple's Dynamic Island; see island.js.
+  { id: "island", name: "Island", icons: "solid", blurb: "Apple's Dynamic Island", island: true },
 ];
 
 export const MODES = [
