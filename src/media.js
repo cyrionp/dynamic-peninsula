@@ -62,8 +62,29 @@ export function hasControls() {
   return state.playing || Date.now() - pausedAt < KEEP_CONTROLS_MS;
 }
 
-/** Play/pause, next or previous, from the media page or the slim bar. */
+// How far the back / forward buttons jump, as in most podcast apps.
+const SKIP_MS = 15_000;
+
+/** Players that report where the track is can be jumped back and forward. */
+export const canSkip = () => state.timeline?.durationMs > 0;
+
+/** Jumps to `positionMs` and moves the progress bar there straight away. */
+function seekTo(positionMs) {
+  call("media_seek", { positionMs }).catch(() => {});
+  state = { ...state, timeline: { ...state.timeline, positionMs } };
+  timelineAt = Date.now();
+  paintProgress();
+}
+
+/** Play/pause, next, previous, or 15 s back / forward, from the media page
+ *  or the slim bar. */
 export function control(action) {
+  if (action === "back" || action === "forward") {
+    if (!canSkip()) return;
+    const target = position() + (action === "back" ? -SKIP_MS : SKIP_MS);
+    // Clamped, so pressing it quickly several times adds up from here.
+    return seekTo(Math.round(Math.min(state.timeline.durationMs, Math.max(0, target))));
+  }
   call("media_control", { action }).catch(() => {});
   // Feel instant; the real state follows from the event.
   if (action === "toggle") setState({ ...state, playing: !state.playing });
@@ -117,11 +138,7 @@ export async function initMedia(onChange) {
     const duration = state.timeline?.durationMs ?? 0;
     if (!track || !duration) return;
     const r = track.getBoundingClientRect();
-    const positionMs = Math.round(Math.min(1, Math.max(0, (e.clientX - r.left) / r.width)) * duration);
-    call("media_seek", { positionMs }).catch(() => {});
-    state = { ...state, timeline: { ...state.timeline, positionMs } };
-    timelineAt = Date.now();
-    paintProgress();
+    seekTo(Math.round(Math.min(1, Math.max(0, (e.clientX - r.left) / r.width)) * duration));
   });
 
   render();
@@ -165,7 +182,9 @@ export function render() {
         }
         <div class="media-controls">
           <button class="icon-btn big" data-media="previous" title="Previous">${icon("previous")}</button>
+          ${canSkip() ? `<button class="icon-btn big" data-media="back" title="Back 15 seconds">${icon("back15")}</button>` : ""}
           <button class="icon-btn big accent play" data-media="toggle" title="${state.playing ? "Pause" : "Play"}">${icon(state.playing ? "pause" : "play")}</button>
+          ${canSkip() ? `<button class="icon-btn big" data-media="forward" title="Forward 15 seconds">${icon("forward15")}</button>` : ""}
           <button class="icon-btn big" data-media="next" title="Next">${icon("next")}</button>
         </div>
       </div>

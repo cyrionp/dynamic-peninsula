@@ -15,6 +15,7 @@ import {
   media,
   hasControls,
   control as mediaControl,
+  canSkip,
   prettySource,
   coverHtml,
   guardCovers,
@@ -267,15 +268,19 @@ let lastControls = null;
 
 function paintControls(force) {
   const show = hasControls();
-  const key = show ? `${media().playing}` : "";
+  const skip = show && canSkip();
+  const key = show ? `${media().playing}:${skip}` : "";
   peninsula.classList.toggle("bar-has-controls", show);
+  peninsula.classList.toggle("bar-has-skip", skip);
   if (!force && key === lastControls) return;
   lastControls = key;
   const button = (action, name, title) =>
     `<button class="bar-btn" data-media="${action}" title="${title}">${icon(name)}</button>`;
   barControls.innerHTML = show
     ? button("previous", "previous", "Previous") +
+      (skip ? button("back", "back15", "Back 15 seconds") : "") +
       button("toggle", media().playing ? "pause" : "play", media().playing ? "Pause" : "Play") +
+      (skip ? button("forward", "forward15", "Forward 15 seconds") : "") +
       button("next", "next", "Next")
     : "";
 }

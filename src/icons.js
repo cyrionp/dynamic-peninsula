@@ -2,6 +2,16 @@
 // weight, caps and joins come from the theme's CSS variables; "solid" icons
 // are filled shapes. Each theme picks one of the two.
 
+// Jump back / forward: a circular arrow around "15", like podcast apps.
+// The forward arrow is the back one mirrored; the number stays readable.
+const SKIP_ARC = "M12 3a9 9 0 1 1-7.8 4.5M14.5.5L12 3l2.5 2.5";
+const skipNumber = (weight) =>
+  `<text x="12" y="15.2" text-anchor="middle" font-size="8.5" font-weight="${weight}" font-family="system-ui, sans-serif" fill="currentColor" stroke="none">15</text>`;
+const skipIcon = (arc, weight, forward) =>
+  `<g${forward ? ' transform="matrix(-1 0 0 1 24 0)"' : ""}>${arc}</g>${skipNumber(weight)}`;
+
+const SKIP_SOLID = `<path d="${SKIP_ARC}" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>`;
+
 const line = {
   media: `<path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>`,
   stopwatch: `<circle cx="12" cy="14" r="8"/><path d="M12 10v4l2 2M10 2h4M12 2v4"/>`,
@@ -17,6 +27,8 @@ const line = {
   pause: `<path d="M8 5v14M16 5v14"/>`,
   next: `<path d="M5 5l10 7-10 7z"/><path d="M19 5v14"/>`,
   previous: `<path d="M19 5L9 12l10 7z"/><path d="M5 5v14"/>`,
+  back15: skipIcon(`<path d="${SKIP_ARC}"/>`, 600, false),
+  forward15: skipIcon(`<path d="${SKIP_ARC}"/>`, 600, true),
   clock: `<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>`,
   back: `<path d="M15 5l-7 7 7 7"/>`,
   up: `<path d="M6 15l6-6 6 6"/>`,
@@ -45,6 +57,8 @@ const solid = {
   pause: `<rect x="6" y="4" width="4.5" height="16" rx="1.2"/><rect x="13.5" y="4" width="4.5" height="16" rx="1.2"/>`,
   next: `<path d="M4 5.2v13.6a1 1 0 0 0 1.6.8l9.4-6.8a1 1 0 0 0 0-1.6L5.6 4.4a1 1 0 0 0-1.6.8z"/><rect x="17" y="4" width="3" height="16" rx="1.2"/>`,
   previous: `<path d="M20 5.2v13.6a1 1 0 0 1-1.6.8L9 12.8a1 1 0 0 1 0-1.6l9.4-6.8a1 1 0 0 1 1.6.8z"/><rect x="4" y="4" width="3" height="16" rx="1.2"/>`,
+  back15: skipIcon(SKIP_SOLID, 800, false),
+  forward15: skipIcon(SKIP_SOLID, 800, true),
   clock: `<path fill-rule="evenodd" d="M12 2a10 10 0 1 1 0 20 10 10 0 0 1 0-20zm-1 5v6l4.5 2.7 1-1.7-3.5-2.1V7z"/>`,
   back: `<path d="M14.6 3.4l2.1 2.1L10.2 12l6.5 6.5-2.1 2.1L6 12z"/>`,
   up: `<path d="M12 6.6l8.1 8.1-2.1 2.1-6-6-6 6-2.1-2.1z"/>`,

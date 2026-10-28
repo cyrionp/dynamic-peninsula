@@ -14,7 +14,7 @@ screen. Hover it and it opens; move away and it tucks itself back in.
   player Windows knows about (Spotify, Apple Music, browsers). While music
   plays, previous / play-pause / next sit right on the slim bar too, in the
   full and the minimal look. A progress bar shows where the track is; click
-  it to jump. Scroll the mouse wheel over the bar to change the system
+  it to jump, or go 15 seconds back or forward (handy for podcasts). Scroll the mouse wheel over the bar to change the system
   volume. When a player shares no artwork, a music-note cover in the
   theme's colours stands in.
 - **Output device and headphones** — under "now playing", pick where the
