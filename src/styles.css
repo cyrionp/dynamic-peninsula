@@ -1620,8 +1620,7 @@ button {
 }
 
 /* The size and look section is rendered into its own box. */
-.settings #layout-box h3:first-child,
-.settings #weather-box h3:first-child {
+.settings #layout-box h3:first-child {
   margin-top: 10px;
 }
 
@@ -1975,18 +1974,6 @@ input[type="range"] {
     animation: none;
     transition: none;
   }
-}
-
-/* Weather: the city field and its button on one line. */
-.weather-form {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin: 4px 0;
-}
-
-.weather-form .field {
-  flex: 1;
 }
 
 /* ==========================================================================

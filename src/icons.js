@@ -2,24 +2,6 @@
 // weight, caps and joins come from the theme's CSS variables; "solid" icons
 // are filled shapes. Each theme picks one of the two.
 
-// Shapes shared by the weather icons: a cloud, the same cloud raised to make
-// room for rain or snow below it, and a small cloud for "partly cloudy".
-const CLOUD = "M7 18h10a4 4 0 0 0 .5-7.97A5.5 5.5 0 0 0 6.6 10.1 4 4 0 0 0 7 18z";
-const HIGH_CLOUD = "M7 14h10a4 4 0 0 0 .5-7.97A5.5 5.5 0 0 0 6.6 6.1 4 4 0 0 0 7 14z";
-const SMALL_CLOUD = "M10 20h7.5a3 3 0 0 0 .4-5.98A4.2 4.2 0 0 0 9.8 14.1 3 3 0 0 0 10 20z";
-const SUN_RAYS = "M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4";
-const SMALL_RAYS = "M8 1.5V3M1.5 8H3M3.4 3.4l1 1M12.6 3.4l-1 1M3.4 12.6l1-1";
-const MOON = "M20 14.5A8.5 8.5 0 1 1 9.5 4a7 7 0 0 0 10.5 10.5z";
-const SMALL_MOON = "M12 9.5A5 5 0 1 1 6.5 3.5a4 4 0 0 0 5.5 6z";
-const RAIN = "M8 17l-1.5 4M12 17l-1.5 4M16 17l-1.5 4";
-const SNOW = "M6.8 17.8l2.4 2.4M9.2 17.8l-2.4 2.4M10.8 19.8l2.4 2.4M13.2 19.8l-2.4 2.4M14.8 17.8l2.4 2.4M17.2 17.8l-2.4 2.4";
-const BOLT = "M13 14l-3 4h4l-3 4.5";
-const FOG = "M4 8h16M2.5 12h19M4 16h16M7 20h10";
-
-// Solid icons draw thin details as bold strokes.
-const bold = (d) =>
-  `<path d="${d}" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>`;
-
 const line = {
   media: `<path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>`,
   stopwatch: `<circle cx="12" cy="14" r="8"/><path d="M12 10v4l2 2M10 2h4M12 2v4"/>`,
@@ -46,15 +28,6 @@ const line = {
   headphones: `<path d="M4 17v-4a8 8 0 0 1 16 0v4"/><rect x="3" y="14" width="4" height="7" rx="1.5"/><rect x="17" y="14" width="4" height="7" rx="1.5"/>`,
   speaker: `<rect x="5" y="2" width="14" height="20" rx="3"/><circle cx="12" cy="14" r="3.5"/><path d="M12 6.5h0"/>`,
   bolt: `<path d="M13 2L5 14h6l-1 8 8-12h-6z"/>`,
-  sun: `<circle cx="12" cy="12" r="4"/><path d="${SUN_RAYS}"/>`,
-  moon: `<path d="${MOON}"/>`,
-  partly: `<circle cx="8" cy="8" r="3"/><path d="${SMALL_RAYS}"/><path d="${SMALL_CLOUD}"/>`,
-  "partly-night": `<path d="${SMALL_MOON}"/><path d="${SMALL_CLOUD}"/>`,
-  cloud: `<path d="${CLOUD}"/>`,
-  fog: `<path d="${FOG}"/>`,
-  rain: `<path d="${HIGH_CLOUD}"/><path d="${RAIN}"/>`,
-  snow: `<path d="${HIGH_CLOUD}"/><path d="${SNOW}"/>`,
-  storm: `<path d="${HIGH_CLOUD}"/><path d="${BOLT}"/>`,
 };
 
 const solid = {
@@ -83,15 +56,6 @@ const solid = {
   headphones: `<path d="M4 17v-4a8 8 0 0 1 16 0v4" fill="none" stroke="currentColor" stroke-width="2.4"/><rect x="2.5" y="13.5" width="5.5" height="8" rx="2"/><rect x="16" y="13.5" width="5.5" height="8" rx="2"/>`,
   speaker: `<path fill-rule="evenodd" d="M8 2h8a3 3 0 0 1 3 3v14a3 3 0 0 1-3 3H8a3 3 0 0 1-3-3V5a3 3 0 0 1 3-3zm4 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8zm0-5a1.3 1.3 0 1 0 0 2.6A1.3 1.3 0 0 0 12 5z"/>`,
   bolt: `<path d="M13.5 1.5L4 14.5h6.5l-1 8 9.5-13h-6.5z"/>`,
-  sun: `<circle cx="12" cy="12" r="4.6"/>${bold(SUN_RAYS)}`,
-  moon: `<path d="${MOON}"/>`,
-  partly: `<circle cx="8" cy="8" r="3.2"/>${bold(SMALL_RAYS)}<path d="${SMALL_CLOUD}"/>`,
-  "partly-night": `<path d="${SMALL_MOON}"/><path d="${SMALL_CLOUD}"/>`,
-  cloud: `<path d="${CLOUD}"/>`,
-  fog: bold(FOG),
-  rain: `<path d="${HIGH_CLOUD}"/>${bold(RAIN)}`,
-  snow: `<path d="${HIGH_CLOUD}"/>${bold(SNOW)}`,
-  storm: `<path d="${HIGH_CLOUD}"/>${bold(BOLT)}`,
 };
 
 let style = "line";
