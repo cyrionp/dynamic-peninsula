@@ -24,7 +24,7 @@ import {
 import { initNotes, renderNotes, initTodos, renderTodos } from "./lists.js";
 import { initAudio, noticeView, render as renderAudio } from "./audio.js";
 import { initLayout } from "./layout.js";
-import { initIsland, paintIsland } from "./island.js";
+import { initIsland, paintIsland, isIsland } from "./island.js";
 
 const peninsula = document.getElementById("peninsula");
 const barLead = document.getElementById("bar-lead");
@@ -221,7 +221,9 @@ function barView() {
 
 const SMART_VIEWS = {
   countdown: countdownView,
-  media: () => mediaView(true),
+  // Island has no buttons on the bar to fall back to, so a track paused a
+  // moment ago stays on it, dimmed, like the real one.
+  media: () => mediaView(!(isIsland() && hasControls())),
   stopwatch: stopwatchView,
 };
 
