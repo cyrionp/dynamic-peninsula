@@ -1,7 +1,8 @@
 // The Island theme behaves like Apple's Dynamic Island, not just looks like
 // it: an empty black pill while idle, artwork on one side and a waveform in
-// the artwork's colour on the other while music plays, and a short peek at
-// the title when the track changes. Shapes and springs live in styles.css
+// the artwork's colour on the other while music plays (dimmed and still for a
+// few minutes after pausing), and a short peek at the title when the track
+// changes or playback resumes. Shapes and springs live in styles.css
 // under [data-theme="island"].
 
 import { getSettings } from "./settings.js";
@@ -16,6 +17,7 @@ const MIN_BRIGHTNESS = 170;
 const peninsula = document.getElementById("peninsula");
 let repaint = () => {};
 let lastTrack;
+let wasPlaying = false;
 let peekTimer = null;
 let tintSrc = null;
 
@@ -31,9 +33,12 @@ export function paintIsland(view, media) {
   // Followed in every theme, so switching to Island doesn't peek at once.
   const track = media.hasSession && media.title ? `${media.title}\n${media.artist ?? ""}` : null;
   const changed = lastTrack !== undefined && track !== lastTrack;
+  // Pressing play again also says what is playing.
+  const resumed = !wasPlaying && media.playing && lastTrack !== undefined;
   lastTrack = track;
+  wasPlaying = Boolean(media.playing);
   if (!isIsland()) return stopPeek();
-  if (changed && track && media.playing && view.kind === "media") peek();
+  if ((changed || resumed) && track && media.playing && view.kind === "media") peek();
   tint(view.kind === "media" ? view.lead.cover : null);
 }
 
