@@ -1,5 +1,6 @@
-// Settings page: theme and dark/light mode, what the slim bar shows, size and
-// look, clock format, sound, startup and updates.
+// Settings page, in groups: Appearance (theme, mode, sizes, look), Slim bar
+// (what it shows, clock format, hiding when idle), Position & lock, Sounds &
+// alerts, and App (startup, updates).
 
 import { load, save } from "./store.js";
 import { THEMES, MODES, themeById } from "./themes.js";
@@ -160,90 +161,104 @@ export function render() {
     ? `Shows ${smartOn.join(", then ")}; otherwise the clock.`
     : "Everything is off, so it shows the clock.";
 
-  page.innerHTML = `
-    <h3>Theme</h3>
-    <div class="chips mode-chips">
-      ${MODES.map(
-        (m) => `<button class="chip ${m.id === settings.mode ? "is-active" : ""}" data-mode-pick="${m.id}">${m.label}</button>`
-      ).join("")}
-    </div>
-    <div class="theme-grid">
-      ${THEMES.map(
-        (t) => `
-        <button class="theme-tile ${t.id === settings.theme ? "is-active" : ""}" data-theme="${t.id}" data-mode="${settings.mode}" data-theme-pick="${t.id}" title="${t.blurb}">
-          <span class="tile-pill"><span class="dot"></span><i data-icon="media"></i></span>
-          <span class="tile-name">${t.name}</span>
-        </button>`
-      ).join("")}
-    </div>
+  const group = (title, body) => `<section class="settings-group"><h2>${title}</h2>${body}</section>`;
 
-    <h3>The slim bar shows</h3>
-    <div class="chips">
-      ${BAR_MODES.map(
-        (m) => `<button class="chip ${m.id === settings.bar ? "is-active" : ""}" data-bar="${m.id}">${m.label}</button>`
-      ).join("")}
-    </div>
-    ${
-      settings.bar === "smart"
-        ? `<ol class="smart-order">
-            ${settings.smart
-              .map(
-                (s, i, all) => `
-              <li class="smart-item ${s.on ? "" : "is-off"}" data-smart="${s.id}">
-                <span class="smart-rank">${i + 1}</span>
-                <span class="smart-label">${SMART_ITEMS[s.id].label}</span>
-                <button class="icon-btn" data-smart-move="-1" title="Move up" ${i === 0 ? "disabled" : ""}>${icon("up")}</button>
-                <button class="icon-btn" data-smart-move="1" title="Move down" ${i === all.length - 1 ? "disabled" : ""}>${icon("down")}</button>
-                <input type="checkbox" class="switch" data-smart-toggle="${s.id}" title="Show in Smart" ${s.on ? "checked" : ""} />
-              </li>`
-              )
-              .join("")}
-          </ol>
-          <p class="hint">${smartHint}</p>`
-        : `<p class="hint">${barHint}</p>`
-    }
-    <label class="switch-row">
-      <span>Only show when there's something to show</span>
-      <input type="checkbox" class="switch" id="set-hide-idle" ${settings.hideIdle ? "checked" : ""} />
-    </label>
-    <p class="hint">Music, timers and pop-ups bring it out. Otherwise point at its spot to open it.</p>
+  page.innerHTML = [
+    group(
+      "Appearance",
+      `
+      <h3>Theme</h3>
+      <div class="chips mode-chips">
+        ${MODES.map(
+          (m) => `<button class="chip ${m.id === settings.mode ? "is-active" : ""}" data-mode-pick="${m.id}">${m.label}</button>`
+        ).join("")}
+      </div>
+      <div class="theme-grid">
+        ${THEMES.map(
+          (t) => `
+          <button class="theme-tile ${t.id === settings.theme ? "is-active" : ""}" data-theme="${t.id}" data-mode="${settings.mode}" data-theme-pick="${t.id}" title="${t.blurb}">
+            <span class="tile-pill"><span class="dot"></span><i data-icon="media"></i></span>
+            <span class="tile-name">${t.name}</span>
+          </button>`
+        ).join("")}
+      </div>
+      <div id="layout-look-box"></div>`
+    ),
+    group(
+      "Slim bar",
+      `
+      <h3>Shows</h3>
+      <div class="chips">
+        ${BAR_MODES.map(
+          (m) => `<button class="chip ${m.id === settings.bar ? "is-active" : ""}" data-bar="${m.id}">${m.label}</button>`
+        ).join("")}
+      </div>
+      ${
+        settings.bar === "smart"
+          ? `<ol class="smart-order">
+              ${settings.smart
+                .map(
+                  (s, i, all) => `
+                <li class="smart-item ${s.on ? "" : "is-off"}" data-smart="${s.id}">
+                  <span class="smart-rank">${i + 1}</span>
+                  <span class="smart-label">${SMART_ITEMS[s.id].label}</span>
+                  <button class="icon-btn" data-smart-move="-1" title="Move up" ${i === 0 ? "disabled" : ""}>${icon("up")}</button>
+                  <button class="icon-btn" data-smart-move="1" title="Move down" ${i === all.length - 1 ? "disabled" : ""}>${icon("down")}</button>
+                  <input type="checkbox" class="switch" data-smart-toggle="${s.id}" title="Show in Smart" ${s.on ? "checked" : ""} />
+                </li>`
+                )
+                .join("")}
+            </ol>
+            <p class="hint">${smartHint}</p>`
+          : `<p class="hint">${barHint}</p>`
+      }
+      <h3>Behaviour</h3>
+      <label class="switch-row">
+        <span>24-hour clock</span>
+        <input type="checkbox" class="switch" id="set-24h" ${settings.clock24 ? "checked" : ""} />
+      </label>
+      <label class="switch-row">
+        <span>Only show when there's something to show</span>
+        <input type="checkbox" class="switch" id="set-hide-idle" ${settings.hideIdle ? "checked" : ""} />
+      </label>
+      <p class="hint">Music, timers and pop-ups bring it out. Otherwise point at its spot to open it.</p>`
+    ),
+    group("Position &amp; lock", `<div id="layout-position-box"></div>`),
+    group(
+      "Sounds &amp; alerts",
+      `
+      <h3>When a countdown ends</h3>
+      <label class="switch-row">
+        <span>Play a sound</span>
+        <input type="checkbox" class="switch" id="set-sound" ${settings.sound ? "checked" : ""} />
+      </label>
+      <div class="switch-row">
+        <span>Volume</span>
+        <input type="range" id="set-volume" min="0.1" max="1" step="0.1" value="${settings.volume}" />
+        <button class="mini" id="test-sound">Test</button>
+      </div>
 
-    <div id="layout-box"></div>
+      <h3>Headphones</h3>
+      <label class="switch-row">
+        <span>Show battery when they connect, and which earbud is in</span>
+        <input type="checkbox" class="switch" id="set-headphones" ${settings.headphoneAlerts ? "checked" : ""} />
+      </label>
+      <p class="hint">AirPods battery and in-ear status come from their Bluetooth signal; other headsets show the battery Windows reports.</p>`
+    ),
+    group(
+      "App",
+      `
+      <h3>Startup</h3>
+      <label class="switch-row">
+        <span>Launch when the computer starts</span>
+        <input type="checkbox" class="switch" id="set-autostart" ${autostart ? "checked" : ""} ${autostart === null ? "disabled" : ""} />
+      </label>
+      ${autostart === null && !inTauri ? `<p class="hint">Available in the desktop app.</p>` : ""}
 
-    <h3>Clock</h3>
-    <label class="switch-row">
-      <span>24-hour clock</span>
-      <input type="checkbox" class="switch" id="set-24h" ${settings.clock24 ? "checked" : ""} />
-    </label>
-
-    <h3>When a countdown ends</h3>
-    <label class="switch-row">
-      <span>Play a sound</span>
-      <input type="checkbox" class="switch" id="set-sound" ${settings.sound ? "checked" : ""} />
-    </label>
-    <div class="switch-row">
-      <span>Volume</span>
-      <input type="range" id="set-volume" min="0.1" max="1" step="0.1" value="${settings.volume}" />
-      <button class="mini" id="test-sound">Test</button>
-    </div>
-
-    <h3>Headphones</h3>
-    <label class="switch-row">
-      <span>Show battery when they connect, and which earbud is in</span>
-      <input type="checkbox" class="switch" id="set-headphones" ${settings.headphoneAlerts ? "checked" : ""} />
-    </label>
-    <p class="hint">AirPods battery and in-ear status come from their Bluetooth signal; other headsets show the battery Windows reports.</p>
-
-    <h3>Startup</h3>
-    <label class="switch-row">
-      <span>Launch when the computer starts</span>
-      <input type="checkbox" class="switch" id="set-autostart" ${autostart ? "checked" : ""} ${autostart === null ? "disabled" : ""} />
-    </label>
-    ${autostart === null && !inTauri ? `<p class="hint">Available in the desktop app.</p>` : ""}
-
-    <h3>Updates</h3>
-    <div id="updates-box"></div>
-  `;
+      <h3>Updates</h3>
+      <div id="updates-box"></div>`
+    ),
+  ].join("");
   paintUpdates();
   paintLayout();
 

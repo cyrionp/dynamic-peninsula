@@ -33,10 +33,22 @@ struct HitRect {
 #[derive(Default)]
 struct HitState(Mutex<HitRect>);
 
-/// Locked: the whole window ignores the mouse, so the apps underneath get
-/// every click. Only the tray menu can unlock it again.
+/// Locked: the window ignores the mouse, so the apps underneath get every
+/// click. Only the tray menu can unlock it again.
 #[derive(Default)]
 struct LockState(AtomicBool);
+
+/// While locked, the spots that still take clicks: the media buttons on the
+/// bar, if the user allows them. Empty means the whole window ignores the
+/// mouse. Reported by the frontend, in CSS pixels like `HitRect`.
+#[derive(Default)]
+struct LockHoles(Mutex<Vec<HitRect>>);
+
+impl HitRect {
+    fn contains(&self, x: f64, y: f64) -> bool {
+        x >= self.x && x <= self.x + self.width && y >= self.y && y <= self.y + self.height
+    }
+}
 
 /// The tray's lock item, kept so its tick follows the lock from either side.
 struct LockItem(CheckMenuItem<Wry>);
@@ -58,6 +70,13 @@ fn set_locked(locked: bool, app: AppHandle) {
 fn set_hit_rect(rect: HitRect, state: State<'_, HitState>) {
     if let Ok(mut r) = state.0.lock() {
         *r = rect;
+    }
+}
+
+#[tauri::command]
+fn set_lock_holes(rects: Vec<HitRect>, state: State<'_, LockHoles>) {
+    if let Ok(mut r) = state.0.lock() {
+        *r = rects;
     }
 }
 
@@ -161,13 +180,18 @@ fn spawn_click_through(app: &AppHandle) {
 
             let x = (cursor.x - origin.x as f64) / scale;
             let y = (cursor.y - origin.y as f64) / scale;
-            let inside = x >= rect.x
-                && x <= rect.x + rect.width
-                && y >= rect.y
-                && y <= rect.y + rect.height;
-
             let locked = app.state::<LockState>().0.load(Ordering::Relaxed);
-            let ignore = locked || !inside;
+            // Locked, only the allowed holes (the media buttons) take clicks.
+            let inside = if locked {
+                app.state::<LockHoles>()
+                    .0
+                    .lock()
+                    .map(|holes| holes.iter().any(|h| h.contains(x, y)))
+                    .unwrap_or(false)
+            } else {
+                rect.contains(x, y)
+            };
+            let ignore = !inside;
             if ignoring != Some(ignore) && window.set_ignore_cursor_events(ignore).is_ok() {
                 ignoring = Some(ignore);
             }
@@ -230,9 +254,11 @@ pub fn run() {
         ))
         .manage(HitState::default())
         .manage(LockState::default())
+        .manage(LockHoles::default())
         .invoke_handler(tauri::generate_handler![
             set_hit_rect,
             set_locked,
+            set_lock_holes,
             media_state,
             media_control,
             media_seek,

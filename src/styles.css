@@ -1635,8 +1635,31 @@ button {
   margin-top: 0;
 }
 
-/* The size and look section is rendered into its own box. */
-.settings #layout-box h3:first-child {
+/* Related settings sit together on one card. */
+.settings-group {
+  background: var(--surface);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px 8px;
+  margin-bottom: 10px;
+}
+
+.settings-group:last-child {
+  margin-bottom: 0;
+}
+
+.settings-group > h2 {
+  font-size: 13px;
+  font-weight: 650;
+  color: var(--fg);
+  margin: 0 0 8px;
+}
+
+.settings-group > h2 + h3 {
+  margin-top: 0;
+}
+
+/* The size and look part is rendered into its own box. */
+.settings #layout-look-box h3:first-child {
   margin-top: 10px;
 }
 
@@ -2143,6 +2166,29 @@ input[type="range"] {
 
 :root[data-theme="island"] .peninsula .bar-controls {
   display: none;
+}
+
+/* Locked with the media buttons allowed, there is no panel to open, so the
+   buttons take the waveform's place on the pill. */
+:root[data-theme="island"] .peninsula.lock-media.bar-has-controls[data-state="collapsed"] .bar-controls {
+  display: flex;
+  margin-right: 0;
+}
+
+:root[data-theme="island"] .peninsula.lock-media.bar-has-controls[data-state="collapsed"] .bar-eq {
+  display: none;
+}
+
+:root[data-theme="island"] .stage .peninsula.lock-media.bar-has-controls[data-state="collapsed"]:not(.island-peek):not([data-kind="notice"]):not([data-kind="volume"]) {
+  width: calc(var(--bar-w) * 0.8 + var(--bar-h) * 1.2 + 3 * var(--bar-btn));
+}
+
+:root[data-theme="island"] .stage .peninsula.lock-media.bar-has-skip[data-state="collapsed"]:not(.island-peek):not([data-kind="notice"]):not([data-kind="volume"]) {
+  width: calc(var(--bar-w) * 0.8 + var(--bar-h) * 1.2 + 5 * var(--bar-btn));
+}
+
+:root[data-theme="island"] .bar-btn[data-media="toggle"] {
+  color: var(--art, var(--accent));
 }
 
 :root[data-theme="island"] .bar-lead .lead-cover {
