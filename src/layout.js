@@ -29,6 +29,8 @@ const DEFAULTS = {
   opacity: 1,
   solidOpen: true,
   locked: false,
+  // While locked, the media buttons on the bar still take clicks.
+  lockMedia: true,
 };
 
 // Room around the peninsula for its shadow, in CSS pixels.
@@ -83,6 +85,7 @@ function applyLook() {
   peninsula.classList.toggle("is-minimal", look.minimal);
   peninsula.classList.toggle("solid-open", look.solidOpen);
   peninsula.classList.toggle("is-locked", look.locked);
+  peninsula.classList.toggle("lock-media", look.locked && look.lockMedia);
   stage.style.setProperty("--pad", `${PAD}px`);
 }
 
@@ -245,7 +248,7 @@ function update(patch) {
   save("layout", look);
   if ("bar" in patch || "panel" in patch || "minimal" in patch) place(anchor);
   else applyLook();
-  if ("locked" in patch) hooks.onLock(look.locked);
+  if ("locked" in patch || "lockMedia" in patch) hooks.onLock(look.locked);
   paintLayout();
 }
 
@@ -254,9 +257,8 @@ const chips = (list, key) =>
     .map((s) => `<button class="chip ${s.id === look[key] ? "is-active" : ""}" data-${key}-size="${s.id}">${s.label}</button>`)
     .join("");
 
-export function paintLayout() {
-  const box = document.getElementById("layout-box");
-  if (!box) return;
+/** Sizes and look, shown under Appearance. */
+function paintLook(box) {
   box.innerHTML = `
     <h3>Bar size</h3>
     <div class="chips">${chips(BAR_SIZES, "bar")}</div>
@@ -278,8 +280,12 @@ export function paintLayout() {
       <span>Solid while open</span>
       <input type="checkbox" class="switch" id="set-solid-open" ${look.solidOpen ? "checked" : ""} />
     </label>
+  `;
+}
 
-    <h3>Position</h3>
+/** Moving it and locking it, shown under Position & lock. */
+function paintPosition(box) {
+  box.innerHTML = `
     <div class="switch-row">
       <span>Drag the bar to move it anywhere</span>
       <button class="mini" id="reset-position">Top center</button>
@@ -288,8 +294,19 @@ export function paintLayout() {
       <span>Lock: clicks go to the windows below</span>
       <button class="mini" id="lock-now">Lock</button>
     </div>
-    <p class="hint">Unlock from the tray icon's menu.</p>
+    <label class="switch-row">
+      <span>Media buttons still work while locked</span>
+      <input type="checkbox" class="switch" id="set-lock-media" ${look.lockMedia ? "checked" : ""} />
+    </label>
+    <p class="hint">Locked, it can't be moved or opened; with the switch on, play / pause, skip and the 15 s buttons on the bar still click. Unlock from the tray icon's menu.</p>
   `;
+}
+
+export function paintLayout() {
+  const lookBox = document.getElementById("layout-look-box");
+  const positionBox = document.getElementById("layout-position-box");
+  if (lookBox) paintLook(lookBox);
+  if (positionBox) paintPosition(positionBox);
 }
 
 function initSection() {
@@ -306,6 +323,7 @@ function initSection() {
   page.addEventListener("change", (e) => {
     if (e.target.id === "set-minimal") update({ minimal: e.target.checked });
     if (e.target.id === "set-solid-open") update({ solidOpen: e.target.checked });
+    if (e.target.id === "set-lock-media") update({ lockMedia: e.target.checked });
   });
   // Live while sliding, so the result is visible straight away.
   page.addEventListener("input", (e) => {

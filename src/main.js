@@ -23,7 +23,7 @@ import {
 } from "./media.js";
 import { initNotes, renderNotes, initTodos, renderTodos } from "./lists.js";
 import { initAudio, noticeView, render as renderAudio } from "./audio.js";
-import { initLayout } from "./layout.js";
+import { initLayout, getLook } from "./layout.js";
 import { initIsland, paintIsland, isIsland } from "./island.js";
 
 const peninsula = document.getElementById("peninsula");
@@ -37,14 +37,24 @@ let page = load("tab", "media");
 
 /* ---------- click-through: tell Rust where the painted area is ---------- */
 
+const toRect = (r) => ({ x: r.left, y: r.top, width: r.width, height: r.height });
+
+// Locked, only the bar's media buttons take clicks, and only if allowed.
+function lockHoles() {
+  const { locked, lockMedia } = getLook();
+  if (!locked || !lockMedia || state() !== "collapsed") return [];
+  return [...barControls.querySelectorAll("button")]
+    .map((b) => b.getBoundingClientRect())
+    .filter((r) => r.width > 0 && r.height > 0)
+    .map(toRect);
+}
+
 let hitFrame = 0;
 function reportHitRect() {
   cancelAnimationFrame(hitFrame);
   hitFrame = requestAnimationFrame(() => {
-    const r = peninsula.getBoundingClientRect();
-    call("set_hit_rect", {
-      rect: { x: r.left, y: r.top, width: r.width, height: r.height },
-    }).catch(() => {});
+    call("set_hit_rect", { rect: toRect(peninsula.getBoundingClientRect()) }).catch(() => {});
+    call("set_lock_holes", { rects: lockHoles() }).catch(() => {});
   });
 }
 new ResizeObserver(reportHitRect).observe(peninsula);
@@ -73,11 +83,11 @@ function isEditing() {
 }
 
 // Hovering the bar's media buttons leaves it closed, so they stay put under
-// the mouse; anywhere else opens the panel.
+// the mouse; anywhere else opens the panel. Locked, it never opens.
 peninsula.addEventListener("mouseover", (e) => {
   hovering = true;
   clearTimeout(closeTimer);
-  if (e.target.closest("#bar-controls")) return;
+  if (e.target.closest("#bar-controls") || getLook().locked) return;
   if (state() !== "alert") setState("expanded");
 });
 
@@ -187,7 +197,7 @@ function showVolume(v) {
 document.getElementById("bar").addEventListener(
   "wheel",
   (e) => {
-    if (!e.deltaY) return;
+    if (!e.deltaY || getLook().locked) return;
     e.preventDefault();
     volumePending += e.deltaY < 0 ? VOLUME_STEP : -VOLUME_STEP;
     sendVolume();
@@ -276,6 +286,8 @@ function paintControls(force) {
   peninsula.classList.toggle("bar-has-skip", skip);
   if (!force && key === lastControls) return;
   lastControls = key;
+  // The buttons moved or changed: the clickable spots while locked follow.
+  reportHitRect();
   const button = (action, name, title) =>
     `<button class="bar-btn" data-media="${action}" title="${title}">${icon(name)}</button>`;
   barControls.innerHTML = show
@@ -410,6 +422,7 @@ initLayout({
   onLayout: reportHitRect,
   // Locked: it can't be hovered any more, so fold it away.
   onLock(locked) {
+    reportHitRect();
     if (!locked || state() !== "expanded") return;
     hovering = false;
     document.activeElement?.blur();

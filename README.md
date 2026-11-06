@@ -35,9 +35,10 @@ screen. Hover it and it opens; move away and it tucks itself back in.
 - **Stopwatches** — several independent, named stopwatches at once.
 - **Move it anywhere** — drag the bar to any spot on any screen; near the top
   it docks again. Pick from four bar sizes and four open sizes, a minimal
-  pill look and its opacity. **Lock** it from Settings and it ignores the
-  mouse entirely, so you can click the windows underneath; unlock it from
-  the tray icon's menu.
+  pill look and its opacity. **Lock** it from Settings and it can't be
+  moved or opened, and clicks go to the windows underneath; the media
+  buttons on the bar keep working (switch that off in Settings to make it
+  ignore the mouse entirely). Unlock it from the tray icon's menu.
 - **Launch at startup** — optional, switched on in Settings.
 - **Settings & themes** — pick what the slim bar shows (smart, now playing,
   countdown, stopwatch, clock, date; for Smart you set the order and what it
