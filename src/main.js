@@ -7,7 +7,8 @@ import { load, save } from "./store.js";
 import { icon, paintIcons } from "./icons.js";
 import { playChime } from "./sound.js";
 import { formatClock, formatElapsedShort, formatRemaining, escapeHtml } from "./util.js";
-import { initSettings, applyTheme, getSettings, render as renderSettings } from "./settings.js";
+import { initSettings, applyTheme, getSettings, setSetting, render as renderSettings } from "./settings.js";
+import { initDock, syncDock } from "./dockctl.js";
 import * as stopwatches from "./stopwatches.js";
 import * as countdowns from "./countdowns.js";
 import {
@@ -385,6 +386,22 @@ document.getElementById("alert-restart").addEventListener("click", () => {
   syncTicker();
 });
 
+/* ---------- taskbar dock: a click on it opens the peninsula ---------- */
+
+// Opened from the dock, the mouse is far away: it closes again by itself
+// unless the mouse comes over to it.
+const DOCK_OPEN_MS = 5000;
+
+function openFromDock(next) {
+  if (getLook().locked) return;
+  if (next) showPage(next);
+  clearTimeout(closeTimer);
+  if (state() !== "alert") setState("expanded");
+  closeTimer = setTimeout(() => {
+    if (state() === "expanded" && !hovering && !isEditing()) setState("collapsed");
+  }, DOCK_OPEN_MS);
+}
+
 /* ---------- boot ---------- */
 
 function onDataChange() {
@@ -393,6 +410,7 @@ function onDataChange() {
 }
 
 function onSettingsChange(patch) {
+  if ("dock" in patch) syncDock(patch.dock);
   if ("theme" in patch || "mode" in patch) {
     applyTheme();
     paintIcons();
@@ -411,6 +429,12 @@ function onSettingsChange(patch) {
 applyTheme();
 paintIcons();
 initSettings(onSettingsChange);
+initDock({
+  enabled: getSettings().dock,
+  onStatus: renderSettings,
+  onOpen: openFromDock,
+  onToggle: () => setSetting({ dock: !getSettings().dock }),
+});
 stopwatches.initStopwatches(onDataChange);
 countdowns.initCountdowns(onDataChange);
 initNotes();

@@ -1,6 +1,6 @@
 // Settings page, in groups: Appearance (theme, mode, sizes, look), Slim bar
-// (what it shows, clock format, hiding when idle), Position & lock, Sounds &
-// alerts, and App (startup, updates).
+// (what it shows, clock format, hiding when idle), Taskbar dock, Position &
+// lock, Sounds & alerts, and App (startup, updates).
 
 import { load, save } from "./store.js";
 import { THEMES, MODES, themeById } from "./themes.js";
@@ -9,6 +9,8 @@ import { playChime } from "./sound.js";
 import { initUpdates, checkForUpdates, installUpdate, paintUpdates } from "./updates.js";
 import { paintLayout } from "./layout.js";
 import { inTauri } from "./tauri.js";
+import { DOCK_ITEMS, DOCK_LOOKS, DOCK_DEFAULTS, normaliseDockItems } from "./dockconfig.js";
+import { dockStatus } from "./dockctl.js";
 
 const DEFAULTS = {
   theme: "lagoon",
@@ -27,6 +29,7 @@ const DEFAULTS = {
     { id: "media", on: true },
     { id: "stopwatch", on: true },
   ],
+  ...DOCK_DEFAULTS,
 };
 
 export const SMART_ITEMS = {
@@ -96,6 +99,21 @@ export function applyTheme() {
   setIconStyle(theme.icons);
 }
 
+/** Changes settings from outside the page (the tray's dock item). */
+export function setSetting(patch) {
+  update(patch);
+}
+
+/** Moves item `id` of an ordered list one step up (-1) or down (1). */
+function moved(list, id, step) {
+  const next = [...list];
+  const i = next.findIndex((s) => s.id === id);
+  const j = i + step;
+  if (i < 0 || j < 0 || j >= next.length) return null;
+  [next[i], next[j]] = [next[j], next[i]];
+  return next;
+}
+
 function update(patch) {
   settings = { ...settings, ...patch };
   save("settings", settings);
@@ -119,12 +137,17 @@ export function initSettings(onChange) {
 
     const move = e.target.closest("[data-smart-move]");
     if (move) {
-      const smart = [...settings.smart];
-      const i = smart.findIndex((s) => s.id === move.closest("[data-smart]").dataset.smart);
-      const j = i + Number(move.dataset.smartMove);
-      if (j < 0 || j >= smart.length) return;
-      [smart[i], smart[j]] = [smart[j], smart[i]];
-      return update({ smart });
+      const smart = moved(settings.smart, move.closest("[data-smart]").dataset.smart, Number(move.dataset.smartMove));
+      return smart && update({ smart });
+    }
+
+    const look = e.target.closest("[data-dock-look]");
+    if (look) return update({ dockLook: look.dataset.dockLook });
+
+    const dockMove = e.target.closest("[data-dock-move]");
+    if (dockMove) {
+      const dockItems = moved(settings.dockItems, dockMove.closest("[data-dock-item]").dataset.dockItem, Number(dockMove.dataset.dockMove));
+      return dockItems && update({ dockItems });
     }
 
     if (e.target.closest("#test-sound")) playChime(settings.volume);
@@ -138,6 +161,12 @@ export function initSettings(onChange) {
     if (e.target.dataset.smartToggle) {
       const id = e.target.dataset.smartToggle;
       update({ smart: settings.smart.map((s) => (s.id === id ? { ...s, on: e.target.checked } : s)) });
+    }
+    if (e.target.id === "set-dock") update({ dock: e.target.checked });
+    if (e.target.id === "set-dock-apart") update({ dockApart: e.target.checked });
+    if (e.target.dataset.dockToggle) {
+      const id = e.target.dataset.dockToggle;
+      update({ dockItems: settings.dockItems.map((s) => (s.id === id ? { ...s, on: e.target.checked } : s)) });
     }
     if (e.target.id === "set-sound") update({ sound: e.target.checked });
     if (e.target.id === "set-headphones") update({ headphoneAlerts: e.target.checked });
@@ -223,6 +252,7 @@ export function render() {
       </label>
       <p class="hint">Music, timers and pop-ups bring it out. Otherwise point at its spot to open it.</p>`
     ),
+    dockGroup(group),
     group("Position &amp; lock", `<div id="layout-position-box"></div>`),
     group(
       "Sounds &amp; alerts",
@@ -268,4 +298,64 @@ export function render() {
     paintIcons(tile);
   }
   setIconStyle(themeById(settings.theme).icons);
+}
+
+/** An ordered list with up / down buttons and a switch on each row. */
+function orderList(items, labels, attr) {
+  return `<ol class="smart-order">
+    ${items
+      .map(
+        (s, i, all) => `
+      <li class="smart-item ${s.on ? "" : "is-off"}" data-${attr}-item="${s.id}">
+        <span class="smart-rank">${i + 1}</span>
+        <span class="smart-label">${labels[s.id].label}</span>
+        <button class="icon-btn" data-${attr}-move="-1" title="Move up" ${i === 0 ? "disabled" : ""}>${icon("up")}</button>
+        <button class="icon-btn" data-${attr}-move="1" title="Move down" ${i === all.length - 1 ? "disabled" : ""}>${icon("down")}</button>
+        <input type="checkbox" class="switch" data-${attr}-toggle="${s.id}" title="Show" ${s.on ? "checked" : ""} />
+      </li>`
+      )
+      .join("")}
+  </ol>`;
+}
+
+/** Taskbar dock (experimental): on/off, its look, and what it shows. */
+function dockGroup(group) {
+  const status = dockStatus();
+  // Unavailable here: it can still be switched off, never on.
+  const blocked = !status.available && !settings.dock;
+  const reason = !status.available && status.reason ? `<p class="hint">${status.reason}</p>` : "";
+  if (!inTauri) {
+    return group("Taskbar dock <small class=\"tag\">experimental</small>", `<p class="hint">Available in the desktop app on Windows 11.</p>`);
+  }
+  const lookHint = DOCK_LOOKS.find((l) => l.id === settings.dockLook)?.hint ?? "";
+  return group(
+    "Taskbar dock <small class=\"tag\">experimental</small>",
+    `
+    <label class="switch-row">
+      <span>Show a dock on the left of the taskbar</span>
+      <input type="checkbox" class="switch" id="set-dock" ${settings.dock ? "checked" : ""} ${blocked ? "disabled" : ""} />
+    </label>
+    ${reason || `<p class="hint">Sits in the empty space left of the centred taskbar icons, on the main screen. Turn it off here or from the tray icon.</p>`}
+    ${
+      settings.dock
+        ? `
+    <h3>Look</h3>
+    <div class="chips">
+      ${DOCK_LOOKS.map((l) => `<button class="chip ${l.id === settings.dockLook ? "is-active" : ""}" data-dock-look="${l.id}">${l.label}</button>`).join("")}
+    </div>
+    <p class="hint">${lookHint}</p>
+    <h3>Shows</h3>
+    <label class="switch-row">
+      <span>A running countdown stands apart, first</span>
+      <input type="checkbox" class="switch" id="set-dock-apart" ${settings.dockApart ? "checked" : ""} />
+    </label>
+    <p class="hint">${
+      settings.dockApart
+        ? "Countdowns come before everything else, in a pill of their own, and never get cut short."
+        : "Countdowns take their place in the order below, like everything else."
+    }</p>
+    ${orderList(settings.dockItems, DOCK_ITEMS, "dock")}`
+        : ""
+    }`
+  );
 }

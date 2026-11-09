@@ -49,6 +49,15 @@ screen. Hover it and it opens; move away and it tucks itself back in.
   black notch while idle that springs open, artwork and a waveform in the
   artwork's colour while music plays, a short peek at each new track, and
   timers in orange. Always black, in either mode.
+- **Taskbar dock (experimental)** — on Windows 11 with centred taskbar
+  icons, a small dock in the empty space on the left of the taskbar, on the
+  main screen. It looks like part of the taskbar (its light or dark look and
+  your accent colour) or, if you prefer, like your peninsula theme. A running
+  countdown comes first, in a pill of its own (switch that off in Settings),
+  then music with its buttons, a stopwatch and headphone battery, in the
+  order you choose. It steps aside for full-screen apps, Start and search,
+  and while the taskbar is auto-hidden. Switch it on in Settings or from the
+  tray icon's menu.
 - **Only show when needed** — an optional switch that tucks the peninsula away
   while it has nothing but the clock to show; music, timers and pop-ups bring
   it back, and pointing at its spot opens it.

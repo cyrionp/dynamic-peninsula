@@ -1,9 +1,10 @@
 {
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
-  "description": "Permissions for the main peninsula window",
+  "description": "Permissions for the peninsula window and the taskbar dock",
   "windows": [
-    "main"
+    "main",
+    "dock"
   ],
   "permissions": [
     "core:default",
