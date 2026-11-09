@@ -110,11 +110,44 @@ fn dock_layout() -> Option<taskbar::DockLayout> {
     taskbar::layout()
 }
 
-/// A click on the dock: open the peninsula on that page.
+/// A click on the dock: open the peninsula on that page. The peninsula
+/// places itself above the dock first, so it isn't shown here.
 #[tauri::command]
 fn dock_open(page: String, app: AppHandle) {
-    show_main(&app);
     let _ = app.emit_to("main", "dock://open", page);
+}
+
+/// Where the dock is, in physical screen pixels, so the peninsula can open
+/// right above it.
+#[derive(Clone, Copy, serde::Serialize)]
+struct ScreenRect {
+    x: i32,
+    y: i32,
+    width: u32,
+    height: u32,
+}
+
+#[tauri::command]
+fn dock_rect(app: AppHandle) -> Option<ScreenRect> {
+    let window = app.get_webview_window(taskbar::DOCK)?;
+    let at = window.outer_position().ok()?;
+    let size = window.outer_size().ok()?;
+    Some(ScreenRect {
+        x: at.x,
+        y: at.y,
+        width: size.width,
+        height: size.height,
+    })
+}
+
+/// "Show" from the tray: with the dock on, the peninsula lives above the
+/// dock and opens from there; otherwise it simply shows.
+fn show_or_open(app: &AppHandle) {
+    if taskbar::status().enabled {
+        let _ = app.emit_to("main", "dock://open", "");
+    } else {
+        show_main(app);
+    }
 }
 
 #[tauri::command]
@@ -182,7 +215,8 @@ fn spawn_show_fallback(app: &AppHandle) {
     std::thread::spawn(move || {
         std::thread::sleep(SHOW_FALLBACK);
         if let Some(window) = app.get_webview_window("main") {
-            if !window.is_visible().unwrap_or(true) {
+            // With the dock on, the peninsula is meant to stay hidden.
+            if !window.is_visible().unwrap_or(true) && !taskbar::status().enabled {
                 let _ = position_top_center(&window);
                 show_main(&app);
             }
@@ -255,7 +289,7 @@ fn build_tray(app: &AppHandle) -> tauri::Result<()> {
         .menu(&menu)
         .show_menu_on_left_click(false)
         .on_menu_event(|app, event| match event.id.as_ref() {
-            "show" => show_main(app),
+            "show" => show_or_open(app),
             "lock" => {
                 let locked = app.state::<LockState>().0.load(Ordering::Relaxed);
                 set_lock(app, !locked);
@@ -280,7 +314,7 @@ fn build_tray(app: &AppHandle) -> tauri::Result<()> {
                 ..
             } = event
             {
-                show_main(tray.app_handle());
+                show_or_open(tray.app_handle());
             }
         });
 
@@ -311,6 +345,7 @@ pub fn run() {
             dock_status,
             dock_layout,
             dock_open,
+            dock_rect,
             media_state,
             media_control,
             media_seek,

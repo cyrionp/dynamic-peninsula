@@ -93,6 +93,7 @@ function mediaView(now) {
     cover: media.thumbnail || null,
     title: [media.title, media.artist].filter(Boolean).join(" · ") || prettySource(media.source),
     playing: Boolean(media.playing),
+    canSkip: canSkip(),
   };
 }
 
@@ -126,8 +127,10 @@ function views(now) {
 
 /* ---------- painting ---------- */
 
-const button = (action, name, title) =>
-  `<button class="dk-btn" data-media="${action}" title="${title}" aria-label="${title}">${icon(name)}</button>`;
+// `off`: shown but greyed out (a player that doesn't say where the track is
+// can't be jumped back or forward).
+const button = (action, name, title, off = false) =>
+  `<button class="dk-btn" data-media="${action}" title="${off ? `${title} (this player doesn't allow it)` : title}" aria-label="${title}" ${off ? "disabled" : ""}>${icon(name)}</button>`;
 
 // Every item but the countdown pill carries data-slot: when the taskbar
 // leaves too little room, slots are dropped from the end (see fit()).
@@ -155,7 +158,9 @@ function itemHtml(v, apart = false) {
           </button>
           <span class="dk-controls">
             ${button("previous", "previous", "Previous")}
+            ${button("back", "back15", "Back 15 seconds", !v.canSkip)}
             ${button("toggle", v.playing ? "pause" : "play", v.playing ? "Pause" : "Play")}
+            ${button("forward", "forward15", "Forward 15 seconds", !v.canSkip)}
             ${button("next", "next", "Next")}
           </span>
         </div>`;
@@ -247,7 +252,9 @@ window.addEventListener("resize", () => fit());
 dock.addEventListener("click", (e) => {
   const media = e.target.closest("[data-media]");
   if (media) {
-    call("media_control", { action: media.dataset.media }).catch(() => {});
+    const action = media.dataset.media;
+    if (action === "back" || action === "forward") return skip(action === "back" ? -1 : 1);
+    call("media_control", { action }).catch(() => {});
     return;
   }
   const open = e.target.closest("[data-open]");
@@ -271,9 +278,34 @@ window.addEventListener("contextmenu", (e) => e.preventDefault());
 /* ---------- boot ---------- */
 
 function setMedia(next) {
-  if (media.playing && !next.playing) pausedAt = Date.now();
+  if (media.playing && !next?.playing) pausedAt = Date.now();
   media = next ?? { hasSession: false };
+  timelineAt = Date.now();
   paint();
+}
+
+/* ---------- 15 s back / forward, as on the peninsula ---------- */
+
+const SKIP_MS = 15_000;
+// When media.timeline was last known; while playing it moves on by itself.
+let timelineAt = Date.now();
+
+const canSkip = () => media.timeline?.durationMs > 0;
+
+function position() {
+  const { positionMs = 0, durationMs = 0 } = media.timeline ?? {};
+  const now = positionMs + (media.playing ? Date.now() - timelineAt : 0);
+  return durationMs ? Math.min(now, durationMs) : now;
+}
+
+function skip(direction) {
+  if (!canSkip()) return;
+  const target = position() + direction * SKIP_MS;
+  const positionMs = Math.round(Math.min(media.timeline.durationMs, Math.max(0, target)));
+  call("media_seek", { positionMs }).catch(() => {});
+  // Pressed again quickly, it adds up from here.
+  media = { ...media, timeline: { ...media.timeline, positionMs } };
+  timelineAt = Date.now();
 }
 
 // The peninsula writes; this window hears about it at once.
@@ -295,7 +327,7 @@ if (!inTauri && new URLSearchParams(location.search).has("demo")) {
   devices = [{ id: "demo", name: "Headphones (AirPods Pro)", bluetooth: true, isDefault: true }];
   pods = { model: "AirPods Pro", fresh: true, left: { battery: 80 }, right: { battery: 70 }, case: { battery: 60 } };
   applyLayout({ height: Number(q.get("h") || 48), width: Number(q.get("w") || 360), light: q.has("light"), accent: q.get("accent") || "#0078d4", transparency: true });
-  setMedia({ hasSession: true, playing: !q.has("paused"), title: "Midnight City", artist: "M83", source: "Spotify.exe" });
+  setMedia({ hasSession: true, playing: !q.has("paused"), title: "Midnight City", artist: "M83", source: "Spotify.exe", timeline: { positionMs: 60000, durationMs: 240000 } });
 }
 
 if (inTauri) {
@@ -305,6 +337,11 @@ if (inTauri) {
     reportHitRect();
   });
   on("media://update", setMedia);
+  on("media://timeline", (timeline) => {
+    media = { ...media, timeline };
+    timelineAt = Date.now();
+    paint();
+  });
   on("audio://devices", (next) => {
     devices = next?.devices ?? [];
     paint();
