@@ -371,6 +371,18 @@ body {
   height: 14px;
 }
 
+/* The 15 s jumps: a little larger, so the "15" inside reads. */
+.dk-btn[data-media="back"] .i,
+.dk-btn[data-media="forward"] .i {
+  width: 18px;
+  height: 18px;
+}
+
+.dk-btn:disabled {
+  opacity: 0.35;
+  pointer-events: none;
+}
+
 .dk-btn[data-media="toggle"] .i {
   width: 16px;
   height: 16px;

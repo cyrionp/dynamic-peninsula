@@ -49,6 +49,9 @@ let anchor = load("position", null);
 const stage = document.getElementById("stage");
 const peninsula = document.getElementById("peninsula");
 let mode = { h: "center", v: "start", docked: true };
+// Taskbar dock on: the peninsula doesn't hang at its spot any more. It
+// stays hidden and opens right above the dock when the dock is clicked.
+let aboveDock = false;
 let hooks = { onLayout() {}, onLock() {} };
 
 export const getLook = () => look;
@@ -139,8 +142,10 @@ async function pickMonitor(api, point) {
   return areas.find((a) => primary && a.x === primary.workArea.position.x && a.y === primary.workArea.position.y) ?? areas[0];
 }
 
-/** Moves the window so the bar sits at `target` (or the top-center). */
-async function place(target) {
+/** Moves the window so the bar sits at `target` (or the top-center).
+ *  `transient`: just for now (above the dock), not the saved spot, and
+ *  the window is left hidden for the caller to show. */
+async function place(target, transient = false) {
   applyLook();
   if (!inTauri) return applyMode();
   const api = await windowApi();
@@ -175,13 +180,64 @@ async function place(target) {
   const x = Math.round(cx - bw / 2 - offset.x * s);
   const y = Math.round(cy - bh / 2 - offset.y * s);
   expected = { x, y };
-  anchor = { cx, cy, docked };
-  save("position", anchor);
+  if (!transient) {
+    anchor = { cx, cy, docked };
+    save("position", anchor);
+  }
 
   await api.win.setSize(new api.PhysicalSize(Math.round(f.width * s), Math.round(f.height * s)));
   await api.win.setPosition(new api.PhysicalPosition(x, y));
-  await api.win.show();
+  if (!transient && !aboveDock) await api.win.show();
   hooks.onLayout();
+}
+
+/* ---------- with the taskbar dock: open above it ---------- */
+
+// Room between the dock and the peninsula, in CSS pixels.
+const DOCK_GAP = 8;
+
+export const isAboveDock = () => aboveDock;
+
+/** Dock on or off: hide the peninsula, or put it back at its spot. */
+export async function setAboveDock(on) {
+  if (aboveDock === on) return;
+  aboveDock = on;
+  if (!inTauri) return;
+  if (on) {
+    const { win } = await windowApi();
+    await win.hide();
+  } else {
+    await place(anchor);
+  }
+}
+
+/** Opens upward from just above the dock, its left edges lined up. */
+export async function showAboveDock() {
+  if (!inTauri || !aboveDock) return;
+  const rect = await call("dock_rect").catch(() => null);
+  const api = await windowApi();
+  if (rect) {
+    const area = await pickMonitor(api, { cx: rect.x + rect.width / 2, cy: rect.y - 1 });
+    const s = area?.scale ?? 1;
+    const bar = barSize();
+    await place(
+      {
+        cx: rect.x + (bar.width / 2) * s,
+        cy: rect.y - (DOCK_GAP + bar.height / 2) * s,
+        docked: false,
+      },
+      true
+    );
+  }
+  await api.win.show();
+  await api.win.setAlwaysOnTop(true);
+}
+
+/** Folded away again: with the dock on, that means hidden. */
+export async function hideAboveDock() {
+  if (!inTauri || !aboveDock) return;
+  const { win } = await windowApi();
+  await win.hide();
 }
 
 // After the user drags the window, work out where the bar ended up and
@@ -189,6 +245,7 @@ async function place(target) {
 // open towards.
 let settleTimer = null;
 async function onMoved(pos) {
+  if (aboveDock) return;
   if (expected && Math.abs(pos.x - expected.x) <= 1 && Math.abs(pos.y - expected.y) <= 1) return;
   clearTimeout(settleTimer);
   settleTimer = setTimeout(async () => {
@@ -216,7 +273,8 @@ const DRAG_THRESHOLD = 4;
 function initDrag() {
   const bar = document.getElementById("bar");
   bar.addEventListener("mousedown", (down) => {
-    if (down.button !== 0 || look.locked || !inTauri) return;
+    // Above the dock it has no spot of its own to drag to.
+    if (down.button !== 0 || look.locked || !inTauri || aboveDock) return;
     if (down.target.closest("#bar-controls")) return;
     const move = async (e) => {
       if (!(e.buttons & 1)) return stop();
@@ -246,7 +304,7 @@ function setLocked(locked) {
 function update(patch) {
   look = { ...look, ...patch };
   save("layout", look);
-  if ("bar" in patch || "panel" in patch || "minimal" in patch) place(anchor);
+  if ("bar" in patch || "panel" in patch || "minimal" in patch) aboveDock ? applyLook() : place(anchor);
   else applyLook();
   if ("locked" in patch || "lockMedia" in patch) hooks.onLock(look.locked);
   paintLayout();
@@ -336,7 +394,8 @@ function initSection() {
   });
 }
 
-export async function initLayout({ onLayout, onLock }) {
+export async function initLayout({ onLayout, onLock, aboveDock: startAboveDock = false }) {
+  aboveDock = startAboveDock;
   hooks = { onLayout, onLock };
   applyLook();
   applyMode();
@@ -352,7 +411,7 @@ export async function initLayout({ onLayout, onLock }) {
     const { win } = await windowApi();
     await win.onMoved(({ payload }) => onMoved(payload));
     // Moved onto a screen with another scale: resize the frame to match.
-    await win.onScaleChanged(() => place(anchor));
+    await win.onScaleChanged(() => !aboveDock && place(anchor));
   }
   call("set_locked", { locked: look.locked }).catch(() => {});
   await place(anchor);

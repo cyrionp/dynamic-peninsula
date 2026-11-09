@@ -8,7 +8,7 @@ import { icon, paintIcons } from "./icons.js";
 import { playChime } from "./sound.js";
 import { formatClock, formatElapsedShort, formatRemaining, escapeHtml } from "./util.js";
 import { initSettings, applyTheme, getSettings, setSetting, render as renderSettings } from "./settings.js";
-import { initDock, syncDock } from "./dockctl.js";
+import { initDock, syncDock, dockStatus } from "./dockctl.js";
 import * as stopwatches from "./stopwatches.js";
 import * as countdowns from "./countdowns.js";
 import {
@@ -24,7 +24,7 @@ import {
 } from "./media.js";
 import { initNotes, renderNotes, initTodos, renderTodos } from "./lists.js";
 import { initAudio, noticeView, render as renderAudio } from "./audio.js";
-import { initLayout, getLook } from "./layout.js";
+import { initLayout, getLook, isAboveDock, setAboveDock, showAboveDock, hideAboveDock } from "./layout.js";
 import { initIsland, paintIsland, isIsland } from "./island.js";
 
 const peninsula = document.getElementById("peninsula");
@@ -73,6 +73,31 @@ function setState(next) {
   peninsula.dataset.state = next;
   syncTicker();
   paintBar(true);
+  syncAboveDock();
+}
+
+/* ---------- with the taskbar dock: only shown while open ---------- */
+
+// Long enough for the fold-away animation before the window goes.
+const HIDE_AFTER_MS = 260;
+let hideTimer = null;
+
+function syncAboveDock() {
+  clearTimeout(hideTimer);
+  if (!isAboveDock()) return;
+  if (state() === "collapsed") {
+    hideTimer = setTimeout(() => state() === "collapsed" && hideAboveDock(), HIDE_AFTER_MS);
+  } else {
+    showAboveDock();
+  }
+}
+
+// The dock is on and can work here: the peninsula leaves its spot.
+const wantAboveDock = () => Boolean(getSettings().dock && dockStatus().available);
+
+async function syncDockMode() {
+  await setAboveDock(wantAboveDock());
+  syncAboveDock();
 }
 
 // Typing somewhere keeps the panel open even if the mouse wanders off;
@@ -394,6 +419,11 @@ const DOCK_OPEN_MS = 5000;
 
 function openFromDock(next) {
   if (getLook().locked) return;
+  // A second click on the same thing closes it again.
+  if (state() === "expanded" && (!next || next === page)) {
+    clearTimeout(closeTimer);
+    return setState("collapsed");
+  }
   if (next) showPage(next);
   clearTimeout(closeTimer);
   if (state() !== "alert") setState("expanded");
@@ -410,7 +440,10 @@ function onDataChange() {
 }
 
 function onSettingsChange(patch) {
-  if ("dock" in patch) syncDock(patch.dock);
+  if ("dock" in patch) {
+    syncDock(patch.dock);
+    syncDockMode();
+  }
   if ("theme" in patch || "mode" in patch) {
     applyTheme();
     paintIcons();
@@ -431,7 +464,10 @@ paintIcons();
 initSettings(onSettingsChange);
 initDock({
   enabled: getSettings().dock,
-  onStatus: renderSettings,
+  onStatus() {
+    renderSettings();
+    syncDockMode();
+  },
   onOpen: openFromDock,
   onToggle: () => setSetting({ dock: !getSettings().dock }),
 });
@@ -443,6 +479,7 @@ initMedia(() => paintBar());
 initAudio(() => paintBar());
 initIsland(() => paintBar(true));
 initLayout({
+  aboveDock: wantAboveDock(),
   onLayout: reportHitRect,
   // Locked: it can't be hovered any more, so fold it away.
   onLock(locked) {
