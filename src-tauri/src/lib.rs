@@ -110,6 +110,12 @@ fn dock_layout() -> Option<taskbar::DockLayout> {
     taskbar::layout()
 }
 
+/// The peninsula opened above the dock (it placed itself first), or closed.
+#[tauri::command]
+fn set_peninsula_open(open: bool, app: AppHandle) {
+    taskbar::set_peninsula_open(&app, open);
+}
+
 /// A click on the dock: open the peninsula on that page. The peninsula
 /// places itself above the dock first, so it isn't shown here.
 #[tauri::command]
@@ -143,7 +149,7 @@ fn dock_rect(app: AppHandle) -> Option<ScreenRect> {
 /// "Show" from the tray: with the dock on, the peninsula lives above the
 /// dock and opens from there; otherwise it simply shows.
 fn show_or_open(app: &AppHandle) {
-    if taskbar::status().enabled {
+    if taskbar::dock_mode() {
         let _ = app.emit_to("main", "dock://open", "");
     } else {
         show_main(app);
@@ -204,6 +210,10 @@ fn position_top_center(window: &WebviewWindow) -> tauri::Result<()> {
 }
 
 fn show_main(app: &AppHandle) {
+    // With the dock on, the peninsula only shows when opened from the dock.
+    if taskbar::dock_mode() {
+        return;
+    }
     if let Some(window) = app.get_webview_window("main") {
         let _ = window.show();
         let _ = window.set_always_on_top(true);
@@ -346,6 +356,7 @@ pub fn run() {
             dock_layout,
             dock_open,
             dock_rect,
+            set_peninsula_open,
             media_state,
             media_control,
             media_seek,

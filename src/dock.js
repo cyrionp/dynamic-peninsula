@@ -68,13 +68,16 @@ function applyLayout(layout) {
 
 /* ---------- what each item shows ---------- */
 
+// Countdowns whose ringing was clicked away.
+const quieted = new Set();
+
 const remaining = (cd, now) => (cd.running ? Math.max(0, cd.endsAt - now) : cd.remainingMs);
 const elapsed = (sw, now) => (sw.running ? sw.accumulated + (now - sw.startedAt) : sw.accumulated);
 
 function countdownView(now) {
   const running = countdowns.filter((cd) => cd.running && cd.endsAt > now).sort((a, b) => a.endsAt - b.endsAt);
-  const rang = countdowns.find((cd) => cd.done && now - cd.endsAt >= 0 && now - cd.endsAt < RING_MS);
-  if (rang && !running.length) return { kind: "countdown", ringing: true, name: rang.name, time: "Time's up", more: 0 };
+  const rang = countdowns.find((cd) => cd.done && !quieted.has(cd.id) && now - cd.endsAt >= 0 && now - cd.endsAt < RING_MS);
+  if (rang && !running.length) return { kind: "countdown", ringing: true, id: rang.id, name: rang.name, time: "Time's up", more: 0 };
   const cd = running[0];
   if (!cd) return null;
   const left = remaining(cd, now);
@@ -139,7 +142,7 @@ function itemHtml(v, apart = false) {
   switch (v.kind) {
     case "countdown":
       return `<button ${slot} class="dk-item dk-countdown ${apart ? "is-apart" : ""} ${v.urgent ? "is-urgent" : ""} ${v.ringing ? "is-ringing" : ""}"
-          data-open="countdowns" title="${escapeHtml(v.name)}">
+          ${v.ringing ? `data-quiet="${v.id}"` : `data-open="countdowns"`} title="${v.ringing ? "Click to silence" : escapeHtml(v.name)}">
           <span class="dk-icon">${icon(v.ringing ? "bell" : "countdown")}</span>
           <span class="dk-text">${escapeHtml(v.name)}</span>
           <span class="dk-time" data-time="countdown">${v.time}</span>
@@ -255,6 +258,13 @@ dock.addEventListener("click", (e) => {
     const action = media.dataset.media;
     if (action === "back" || action === "forward") return skip(action === "back" ? -1 : 1);
     call("media_control", { action }).catch(() => {});
+    return;
+  }
+  const quiet = e.target.closest("[data-quiet]");
+  if (quiet) {
+    quieted.add(Number(quiet.dataset.quiet));
+    call("dock_open", { page: "silence" }).catch(() => {});
+    paint();
     return;
   }
   const open = e.target.closest("[data-open]");

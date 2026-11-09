@@ -725,6 +725,16 @@ button {
 
 /* ---------- panel ---------- */
 
+/* Opened from the taskbar dock: no slim bar, the dock already shows it all. */
+.stage[data-above-dock="true"] .bar {
+  display: none;
+}
+
+.stage[data-above-dock="true"] .panel {
+  height: 100%;
+  padding-top: 12px;
+}
+
 .panel {
   opacity: 0;
   pointer-events: none;

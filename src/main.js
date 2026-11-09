@@ -78,18 +78,12 @@ function setState(next) {
 
 /* ---------- with the taskbar dock: only shown while open ---------- */
 
-// Long enough for the fold-away animation before the window goes.
-const HIDE_AFTER_MS = 260;
-let hideTimer = null;
-
+// Open: shown above the dock. Anything else: gone at once, so the slim bar
+// never appears, not even while it folds away.
 function syncAboveDock() {
-  clearTimeout(hideTimer);
   if (!isAboveDock()) return;
-  if (state() === "collapsed") {
-    hideTimer = setTimeout(() => state() === "collapsed" && hideAboveDock(), HIDE_AFTER_MS);
-  } else {
-    showAboveDock();
-  }
+  if (state() === "expanded") showAboveDock();
+  else hideAboveDock();
 }
 
 // The dock is on and can work here: the peninsula leaves its spot.
@@ -386,6 +380,8 @@ function raiseAlert(cd) {
 }
 
 function showAlert() {
+  // With the dock on, the dock rings; nothing opens over the screen.
+  if (isAboveDock()) return ringOnDock();
   const current = alertQueue[0];
   document.getElementById("alert-name").textContent = current.name;
   clearTimeout(closeTimer);
@@ -403,6 +399,22 @@ function showAlert() {
   }
   clearTimeout(alertTimer);
   alertTimer = setTimeout(dismissAlert, 30_000);
+}
+
+// The countdown's pill on the dock rings; only the sound comes from here.
+// A click on the ringing pill silences it (see openFromDock).
+function ringOnDock() {
+  const { sound, volume } = getSettings();
+  clearTimeout(soundRepeat);
+  if (sound) {
+    playChime(volume);
+    soundRepeat = setTimeout(() => playChime(volume * 0.7), 2400);
+  }
+  alertQueue.length = 0;
+}
+
+function silenceAlert() {
+  clearTimeout(soundRepeat);
 }
 
 function dismissAlert() {
@@ -429,6 +441,8 @@ document.getElementById("alert-restart").addEventListener("click", () => {
 const DOCK_OPEN_MS = 5000;
 
 function openFromDock(next) {
+  // The ringing countdown pill: just quiet.
+  if (next === "silence") return silenceAlert();
   if (getLook().locked) return;
   // A second click on the same thing closes it again.
   if (state() === "expanded" && (!next || next === page)) {
