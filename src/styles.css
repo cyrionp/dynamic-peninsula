@@ -1654,6 +1654,19 @@ button {
   margin: 0 0 8px;
 }
 
+/* "experimental" next to a group's title. */
+.settings-group > h2 .tag {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--accent);
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  padding: 0 6px;
+  margin-left: 6px;
+  vertical-align: 1px;
+  opacity: 0.85;
+}
+
 .settings-group > h2 + h3 {
   margin-top: 0;
 }

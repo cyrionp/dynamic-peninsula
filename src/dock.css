@@ -1,0 +1,416 @@
+/* ==========================================================================
+   Taskbar dock (experimental)
+   The window lies over the empty left part of the Windows 11 taskbar, so
+   the taskbar itself (Mica, its colour, its blur) shows through behind the
+   items. The default "windows" look copies the taskbar's own buttons:
+   size, corner radius, hover and press colours, text and the little
+   "running" line, in the taskbar's light or dark mode and the accent
+   colour. The "peninsula" look uses the peninsula's theme instead.
+   Rust sets --tb-h (taskbar height), --win-accent and data-light.
+   ========================================================================== */
+
+:root {
+  --tb-h: 48px;
+  --win-accent: #0078d4;
+  /* Win11 taskbar buttons: 40 px tall on a 48 px bar, 4 px corners. */
+  --item-h: calc(var(--tb-h) - 8px);
+  --item-r: 4px;
+  --item-pad: 8px;
+  --dk-font: "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
+  --dk-num: "Segoe UI Variable Display", "Segoe UI", system-ui, sans-serif;
+  --dk-size: 12px;
+  /* Fluent motion: quick, decelerating. */
+  --dk-ease: cubic-bezier(0, 0, 0, 1);
+  --dk-fast: 167ms;
+  --dk-slow: 333ms;
+}
+
+:root[data-small="true"] {
+  --item-h: calc(var(--tb-h) - 6px);
+  --item-pad: 6px;
+}
+
+/* The taskbar's dark mode. */
+:root[data-dock-look="windows"] {
+  --dk-fg: #ffffff;
+  --dk-muted: rgba(255, 255, 255, 0.79);
+  --dk-hover: rgba(255, 255, 255, 0.06);
+  --dk-press: rgba(255, 255, 255, 0.04);
+  --dk-line: rgba(255, 255, 255, 0.08);
+  --dk-indicator: rgba(255, 255, 255, 0.55);
+  /* The accent as the taskbar draws it on dark: a lighter shade. */
+  --dk-accent: color-mix(in srgb, var(--win-accent) 62%, white);
+  --dk-accent-fg: #000000;
+  --dk-pill: color-mix(in srgb, var(--dk-accent) 16%, transparent);
+  --dk-pill-line: color-mix(in srgb, var(--dk-accent) 42%, transparent);
+  --dk-live: var(--dk-accent);
+}
+
+/* The taskbar's light mode. */
+:root[data-dock-look="windows"][data-light="true"] {
+  --dk-fg: rgba(0, 0, 0, 0.9);
+  --dk-muted: rgba(0, 0, 0, 0.61);
+  --dk-hover: rgba(255, 255, 255, 0.6);
+  --dk-press: rgba(255, 255, 255, 0.35);
+  --dk-line: rgba(0, 0, 0, 0.08);
+  --dk-indicator: rgba(0, 0, 0, 0.45);
+  --dk-accent: color-mix(in srgb, var(--win-accent) 80%, black);
+  --dk-accent-fg: #ffffff;
+  --dk-pill: color-mix(in srgb, var(--dk-accent) 12%, rgba(255, 255, 255, 0.5));
+  --dk-pill-line: color-mix(in srgb, var(--dk-accent) 35%, transparent);
+}
+
+/* "Transparency effects" off: the taskbar is a flat colour, so are we. */
+:root[data-dock-look="windows"][data-transparency="false"] {
+  --dk-hover: rgba(255, 255, 255, 0.09);
+  --dk-pill: color-mix(in srgb, var(--dk-accent) 24%, #202020);
+}
+
+:root[data-dock-look="windows"][data-light="true"][data-transparency="false"] {
+  --dk-hover: rgba(0, 0, 0, 0.05);
+  --dk-pill: color-mix(in srgb, var(--dk-accent) 14%, #f3f3f3);
+}
+
+/* The peninsula's theme, toned down: it sits on the taskbar, so items get
+   the theme's surfaces rather than its full background. */
+:root[data-dock-look="peninsula"] {
+  --dk-fg: var(--fg);
+  --dk-muted: var(--muted);
+  --dk-hover: var(--surface-hover);
+  --dk-press: var(--surface);
+  --dk-line: var(--line);
+  --dk-indicator: var(--muted);
+  --dk-accent: var(--accent);
+  --dk-accent-fg: var(--accent-fg);
+  --dk-pill: var(--bg);
+  --dk-pill-line: var(--line);
+  --dk-live: var(--accent);
+  --dk-font: var(--font);
+  --dk-num: var(--font-num);
+  --item-r: min(var(--radius-sm), 8px);
+}
+
+/* Island: black pills, timers in orange, as on the iPhone. */
+:root[data-dock-look="peninsula"][data-theme="island"] {
+  --dk-pill: #000;
+  --dk-pill-line: transparent;
+  --dk-live: var(--live);
+  --dk-hover: rgba(255, 255, 255, 0.1);
+  --item-r: calc(var(--item-h) / 2);
+}
+
+html,
+body {
+  background: transparent;
+}
+
+body {
+  /* Lets the items react to how much room the taskbar leaves. */
+  container: dockwin / inline-size;
+  font-family: var(--dk-font);
+  font-size: var(--dk-size);
+  color: var(--dk-fg);
+  cursor: default;
+}
+
+.dock {
+  height: var(--tb-h);
+  width: fit-content;
+  max-width: 100vw;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  overflow: hidden;
+}
+
+.dock.is-empty,
+.dock [hidden] {
+  display: none !important;
+}
+
+.dock button {
+  border: 0;
+  background: none;
+  outline: none;
+  color: inherit;
+  font: inherit;
+  cursor: default;
+}
+
+/* ---------- one item: like a taskbar button ---------- */
+
+.dk-item {
+  position: relative;
+  flex: none;
+  height: var(--item-h);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 var(--item-pad);
+  border-radius: var(--item-r);
+  white-space: nowrap;
+  transition:
+    background-color var(--dk-fast) var(--dk-ease),
+    transform var(--dk-fast) var(--dk-ease);
+}
+
+.dk-item:hover,
+.dk-btn:hover {
+  background: var(--dk-hover);
+}
+
+:root[data-dock-look="windows"][data-light="true"] .dk-item:hover,
+:root[data-dock-look="windows"][data-light="true"] .dk-btn:hover {
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.05);
+}
+
+.dk-item:active,
+.dk-btn:active {
+  background: var(--dk-press);
+  transform: scale(0.97);
+}
+
+.dk-icon {
+  display: inline-flex;
+  color: var(--dk-muted);
+}
+
+.dk-text {
+  min-width: 0;
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dk-time {
+  font-family: var(--dk-num);
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+.dk-sep {
+  flex: none;
+  width: 1px;
+  height: calc(var(--item-h) * 0.4);
+  margin: 0 2px;
+  background: var(--dk-line);
+  border-radius: 1px;
+}
+
+/* ---------- the countdown pill: first, apart, never cut short ---------- */
+
+.dk-countdown .dk-icon {
+  color: var(--dk-live);
+}
+
+.dk-countdown.is-apart {
+  height: calc(var(--item-h) - 8px);
+  border-radius: 999px;
+  padding: 0 12px 0 10px;
+  background: var(--dk-pill);
+  box-shadow: inset 0 0 0 1px var(--dk-pill-line);
+  margin-right: 2px;
+}
+
+.dk-countdown.is-apart:hover {
+  background: color-mix(in srgb, var(--dk-pill) 70%, var(--dk-hover));
+}
+
+.dk-countdown.is-apart .dk-time {
+  color: var(--dk-live);
+}
+
+.dk-badge {
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 16px;
+  padding: 0 5px;
+  border-radius: 999px;
+  color: var(--dk-accent-fg);
+  background: var(--dk-live);
+}
+
+/* The last ten seconds: a soft pulse. */
+.dk-countdown.is-urgent {
+  animation: dk-pulse 1s var(--dk-ease) infinite;
+}
+
+@keyframes dk-pulse {
+  0%,
+  100% {
+    box-shadow: inset 0 0 0 1px var(--dk-pill-line);
+  }
+  50% {
+    box-shadow:
+      inset 0 0 0 1px var(--dk-live),
+      0 0 10px color-mix(in srgb, var(--dk-live) 45%, transparent);
+  }
+}
+
+/* Over: it rings, filled with the accent. */
+.dk-countdown.is-ringing {
+  background: var(--dk-live);
+  color: var(--dk-accent-fg);
+  box-shadow: none;
+  animation: dk-ring 0.9s var(--dk-ease) infinite;
+}
+
+.dk-countdown.is-ringing .dk-icon,
+.dk-countdown.is-ringing .dk-time {
+  color: inherit;
+}
+
+@keyframes dk-ring {
+  0%,
+  60%,
+  100% {
+    transform: rotate(0);
+  }
+  10%,
+  30%,
+  50% {
+    transform: rotate(-3deg);
+  }
+  20%,
+  40% {
+    transform: rotate(3deg);
+  }
+}
+
+/* ---------- now playing: artwork, title and the three buttons ---------- */
+
+.dk-group {
+  flex: 0 1 auto;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+/* Keeps enough of the title to read (artwork, gap, ~64 px of text); with
+   less room than that, later items make way instead (see fit()). */
+.dk-now {
+  flex: 0 1 auto;
+  min-width: calc(24px + 8px + 64px + 2 * var(--item-pad));
+}
+
+.dk-now .dk-text {
+  flex: 0 1 auto;
+}
+
+.dk-cover {
+  flex: none;
+  width: 24px;
+  height: 24px;
+}
+
+.dk-art {
+  width: 24px;
+  height: 24px;
+  display: block;
+  border-radius: 4px;
+  object-fit: cover;
+}
+
+.dk-art.cover-default {
+  display: grid;
+  place-items: center;
+  color: var(--dk-accent-fg);
+  background: var(--dk-accent);
+}
+
+.dk-art.cover-default svg {
+  width: 14px;
+  height: 14px;
+}
+
+/* The taskbar's "running" line under an app: short when paused, long and
+   in the accent colour while music plays. */
+.dk-now::after {
+  content: "";
+  position: absolute;
+  left: calc(var(--item-pad) + 12px);
+  bottom: 2px;
+  width: 6px;
+  height: 3px;
+  border-radius: 1.5px;
+  background: var(--dk-indicator);
+  transform: translateX(-50%);
+  transition:
+    width var(--dk-slow) var(--dk-ease),
+    background-color var(--dk-slow) var(--dk-ease);
+}
+
+.dk-media.is-playing .dk-now::after {
+  width: 16px;
+  background: var(--dk-accent);
+}
+
+.dk-media.is-paused .dk-text {
+  color: var(--dk-muted);
+}
+
+.dk-controls {
+  flex: none;
+  display: flex;
+  align-items: center;
+}
+
+.dk-btn {
+  width: calc(var(--item-h) - 8px);
+  height: calc(var(--item-h) - 8px);
+  display: grid;
+  place-items: center;
+  border-radius: var(--item-r);
+  transition:
+    background-color var(--dk-fast) var(--dk-ease),
+    transform var(--dk-fast) var(--dk-ease);
+}
+
+.dk-btn .i {
+  width: 14px;
+  height: 14px;
+}
+
+.dk-btn[data-media="toggle"] .i {
+  width: 16px;
+  height: 16px;
+}
+
+/* ---------- headphones ---------- */
+
+.dk-headphones.is-stale .dk-time {
+  color: var(--dk-muted);
+  font-weight: 400;
+}
+
+/* ---------- little room: the title goes first, then the artwork; the
+   countdown pill keeps its full size ---------- */
+
+@container dockwin (max-width: 300px) {
+  .dk-now .dk-text {
+    max-width: 96px;
+  }
+}
+
+@container dockwin (max-width: 220px) {
+  .dk-now {
+    min-width: 0;
+  }
+  .dk-now .dk-text {
+    display: none;
+  }
+}
+
+@container dockwin (max-width: 150px) {
+  .dk-now {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dk-countdown.is-urgent,
+  .dk-countdown.is-ringing {
+    animation: none;
+  }
+}

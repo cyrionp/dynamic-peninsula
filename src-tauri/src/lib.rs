@@ -1,9 +1,11 @@
 mod airpods;
 mod audio;
 mod media;
+mod taskbar;
 mod volume;
 
 use std::sync::atomic::{AtomicBool, Ordering};
+use std::collections::HashMap;
 use std::sync::Mutex;
 use std::time::Duration;
 
@@ -20,7 +22,7 @@ const SHOW_FALLBACK: Duration = Duration::from_secs(3);
 /// How often the cursor is checked for click-through. Cheap: one syscall.
 const HIT_TEST_INTERVAL: Duration = Duration::from_millis(40);
 
-/// The painted part of the window in CSS pixels, reported by the frontend.
+/// The painted part of a window in CSS pixels, reported by its page.
 /// Everything outside it lets clicks fall through to the apps underneath.
 #[derive(Clone, Copy, Default, serde::Deserialize)]
 struct HitRect {
@@ -30,8 +32,12 @@ struct HitRect {
     height: f64,
 }
 
+/// One painted area per window: the peninsula ("main") and the taskbar dock.
 #[derive(Default)]
-struct HitState(Mutex<HitRect>);
+struct HitState(Mutex<HashMap<String, HitRect>>);
+
+/// The windows whose transparent parts let clicks through.
+const HIT_WINDOWS: [&str; 2] = ["main", taskbar::DOCK];
 
 /// Locked: the window ignores the mouse, so the apps underneath get every
 /// click. Only the tray menu can unlock it again.
@@ -53,6 +59,9 @@ impl HitRect {
 /// The tray's lock item, kept so its tick follows the lock from either side.
 struct LockItem(CheckMenuItem<Wry>);
 
+/// The tray's taskbar dock item, likewise.
+struct DockItem(CheckMenuItem<Wry>);
+
 fn set_lock(app: &AppHandle, locked: bool) {
     app.state::<LockState>().0.store(locked, Ordering::Relaxed);
     if let Some(item) = app.try_state::<LockItem>() {
@@ -67,9 +76,9 @@ fn set_locked(locked: bool, app: AppHandle) {
 }
 
 #[tauri::command]
-fn set_hit_rect(rect: HitRect, state: State<'_, HitState>) {
+fn set_hit_rect(rect: HitRect, window: WebviewWindow, state: State<'_, HitState>) {
     if let Ok(mut r) = state.0.lock() {
-        *r = rect;
+        r.insert(window.label().to_string(), rect);
     }
 }
 
@@ -78,6 +87,34 @@ fn set_lock_holes(rects: Vec<HitRect>, state: State<'_, LockHoles>) {
     if let Ok(mut r) = state.0.lock() {
         *r = rects;
     }
+}
+
+/// Taskbar dock (experimental) on or off; the Settings switch and the tray
+/// item both end up here. Async so creating its window doesn't block.
+#[tauri::command]
+async fn set_dock_enabled(enabled: bool, app: AppHandle) {
+    taskbar::set_enabled(&app, enabled);
+    if let Some(item) = app.try_state::<DockItem>() {
+        let _ = item.0.set_checked(enabled);
+    }
+}
+
+#[tauri::command]
+fn dock_status() -> taskbar::DockStatus {
+    taskbar::status()
+}
+
+/// The taskbar's size and look, for the dock page as it loads.
+#[tauri::command]
+fn dock_layout() -> Option<taskbar::DockLayout> {
+    taskbar::layout()
+}
+
+/// A click on the dock: open the peninsula on that page.
+#[tauri::command]
+fn dock_open(page: String, app: AppHandle) {
+    show_main(&app);
+    let _ = app.emit_to("main", "dock://open", page);
 }
 
 #[tauri::command]
@@ -158,42 +195,46 @@ fn spawn_show_fallback(app: &AppHandle) {
 fn spawn_click_through(app: &AppHandle) {
     let app = app.clone();
     std::thread::spawn(move || {
-        let mut ignoring: Option<bool> = None;
+        let mut ignoring: HashMap<&str, bool> = HashMap::new();
         loop {
             std::thread::sleep(HIT_TEST_INTERVAL);
-            let Some(window) = app.get_webview_window("main") else {
+            let Ok(cursor) = app.cursor_position() else {
                 continue;
             };
-            let (Ok(cursor), Ok(origin), Ok(scale)) = (
-                app.cursor_position(),
-                window.outer_position(),
-                window.scale_factor(),
-            ) else {
-                continue;
-            };
-            let rect = app
-                .state::<HitState>()
-                .0
-                .lock()
-                .map(|r| *r)
-                .unwrap_or_default();
-
-            let x = (cursor.x - origin.x as f64) / scale;
-            let y = (cursor.y - origin.y as f64) / scale;
-            let locked = app.state::<LockState>().0.load(Ordering::Relaxed);
-            // Locked, only the allowed holes (the media buttons) take clicks.
-            let inside = if locked {
-                app.state::<LockHoles>()
+            for label in HIT_WINDOWS {
+                let Some(window) = app.get_webview_window(label) else {
+                    ignoring.remove(label);
+                    continue;
+                };
+                let (Ok(origin), Ok(scale)) = (window.outer_position(), window.scale_factor()) else {
+                    continue;
+                };
+                let rect = app
+                    .state::<HitState>()
                     .0
                     .lock()
-                    .map(|holes| holes.iter().any(|h| h.contains(x, y)))
-                    .unwrap_or(false)
-            } else {
-                rect.contains(x, y)
-            };
-            let ignore = !inside;
-            if ignoring != Some(ignore) && window.set_ignore_cursor_events(ignore).is_ok() {
-                ignoring = Some(ignore);
+                    .ok()
+                    .and_then(|r| r.get(label).copied())
+                    .unwrap_or_default();
+
+                let x = (cursor.x - origin.x as f64) / scale;
+                let y = (cursor.y - origin.y as f64) / scale;
+                // The lock is the peninsula's; the dock always takes clicks.
+                let locked = label == "main" && app.state::<LockState>().0.load(Ordering::Relaxed);
+                // Locked, only the allowed holes (the media buttons) take clicks.
+                let inside = if locked {
+                    app.state::<LockHoles>()
+                        .0
+                        .lock()
+                        .map(|holes| holes.iter().any(|h| h.contains(x, y)))
+                        .unwrap_or(false)
+                } else {
+                    rect.contains(x, y)
+                };
+                let ignore = !inside;
+                if ignoring.get(label) != Some(&ignore) && window.set_ignore_cursor_events(ignore).is_ok() {
+                    ignoring.insert(label, ignore);
+                }
             }
         }
     });
@@ -203,9 +244,11 @@ fn build_tray(app: &AppHandle) -> tauri::Result<()> {
     let show = MenuItem::with_id(app, "show", "Show", true, None::<&str>)?;
     let lock = CheckMenuItem::with_id(app, "lock", "Lock (click-through)", true, false, None::<&str>)?;
     let center = MenuItem::with_id(app, "center", "Move to top center", true, None::<&str>)?;
+    let dock = CheckMenuItem::with_id(app, "dock", "Taskbar dock (experimental)", true, false, None::<&str>)?;
     let exit = MenuItem::with_id(app, "exit", "Exit", true, None::<&str>)?;
-    let menu = Menu::with_items(app, &[&show, &lock, &center, &exit])?;
+    let menu = Menu::with_items(app, &[&show, &lock, &center, &dock, &exit])?;
     app.manage(LockItem(lock));
+    app.manage(DockItem(dock));
 
     let mut tray = TrayIconBuilder::with_id("main")
         .tooltip("Dynamic Peninsula")
@@ -220,6 +263,11 @@ fn build_tray(app: &AppHandle) -> tauri::Result<()> {
             "center" => {
                 show_main(app);
                 let _ = app.emit("reset-position", ());
+            }
+            // The setting lives in the peninsula's Settings; it switches
+            // the dock and saves the choice.
+            "dock" => {
+                let _ = app.emit_to("main", "dock://toggle", ());
             }
             "exit" => app.exit(0),
             _ => {}
@@ -259,6 +307,10 @@ pub fn run() {
             set_hit_rect,
             set_locked,
             set_lock_holes,
+            set_dock_enabled,
+            dock_status,
+            dock_layout,
+            dock_open,
             media_state,
             media_control,
             media_seek,
@@ -277,6 +329,7 @@ pub fn run() {
             media::init(app.handle());
             audio::init(app.handle());
             airpods::init(app.handle());
+            taskbar::init(app.handle());
             Ok(())
         })
         .run(tauri::generate_context!())
