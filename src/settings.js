@@ -9,6 +9,7 @@ import { playChime } from "./sound.js";
 import { initUpdates, checkForUpdates, installUpdate, paintUpdates } from "./updates.js";
 import { paintLayout } from "./layout.js";
 import { inTauri } from "./tauri.js";
+import { escapeHtml } from "./util.js";
 import { DOCK_ITEMS, DOCK_LOOKS, DOCK_DEFAULTS, normaliseDockItems } from "./dockconfig.js";
 import { dockStatus } from "./dockctl.js";
 
@@ -323,7 +324,7 @@ function dockGroup(group) {
   const status = dockStatus();
   // Unavailable here: it can still be switched off, never on.
   const blocked = !status.available && !settings.dock;
-  const reason = !status.available && status.reason ? `<p class="hint">${status.reason}</p>` : "";
+  const reason = !status.available && status.reason ? `<p class="hint">${escapeHtml(status.reason)}</p>` : "";
   if (!inTauri) {
     return group("Taskbar dock <small class=\"tag\">experimental</small>", `<p class="hint">Available in the desktop app on Windows 11.</p>`);
   }
@@ -336,6 +337,7 @@ function dockGroup(group) {
       <input type="checkbox" class="switch" id="set-dock" ${settings.dock ? "checked" : ""} ${blocked ? "disabled" : ""} />
     </label>
     ${reason || `<p class="hint">Sits in the empty space left of the centred taskbar icons, on the main screen. Turn it off here or from the tray icon.</p>`}
+    ${settings.dock && status.available ? `<p class="hint dock-now">${status.showing ? "Right now: on the taskbar." : `Hidden right now: ${escapeHtml(status.note ?? "starting…")}`}</p>` : ""}
     ${
       settings.dock
         ? `

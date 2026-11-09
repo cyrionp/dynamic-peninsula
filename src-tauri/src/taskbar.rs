@@ -35,6 +35,10 @@ pub struct DockStatus {
     pub available: bool,
     /// Why not, when it can't; in words for the Settings page.
     pub reason: Option<String>,
+    /// It is on the taskbar right now.
+    pub showing: bool,
+    /// Why it is tucked away for the moment (full screen, Start open…).
+    pub note: Option<String>,
 }
 
 /// What the dock page needs to look like the taskbar.
@@ -74,6 +78,7 @@ mod fallback {
             enabled: false,
             available: false,
             reason: Some("The taskbar dock needs Windows 11.".into()),
+            ..Default::default()
         }
     }
 }
@@ -109,7 +114,7 @@ mod windows_impl {
     use windows::Win32::UI::HiDpi::GetDpiForWindow;
     use windows::Win32::UI::Shell::{
         SHAppBarMessage, SHQueryUserNotificationState, ABM_GETSTATE, ABS_AUTOHIDE, APPBARDATA,
-        QUNS_BUSY, QUNS_PRESENTATION_MODE, QUNS_RUNNING_D3D_FULL_SCREEN,
+        QUNS_PRESENTATION_MODE, QUNS_RUNNING_D3D_FULL_SCREEN,
     };
     use windows::Win32::UI::WindowsAndMessaging::{
         FindWindowW, GetClassNameW, GetForegroundWindow, GetWindow, GetWindowLongPtrW,
@@ -133,6 +138,8 @@ mod windows_impl {
 
     static ENABLED: AtomicBool = AtomicBool::new(false);
     static STATUS: Mutex<Option<DockStatus>> = Mutex::new(None);
+    /// Why the dock window couldn't be opened, if it couldn't.
+    static OPEN_ERROR: Mutex<Option<String>> = Mutex::new(None);
     /// The last layout sent, for a dock page that loads after it was sent.
     static LAYOUT: Mutex<Option<DockLayout>> = Mutex::new(None);
 
@@ -148,7 +155,7 @@ mod windows_impl {
             .unwrap_or_else(|| DockStatus {
                 enabled: ENABLED.load(Ordering::Relaxed),
                 available: true,
-                reason: None,
+                ..Default::default()
             })
     }
 
@@ -183,6 +190,12 @@ mod windows_impl {
                 .visible(false)
                 .inner_size(FALLBACK_WIDTH, 48.0)
                 .build();
+            if let Ok(mut err) = OPEN_ERROR.lock() {
+                *err = built
+                    .as_ref()
+                    .err()
+                    .map(|e| format!("Couldn't open the dock window: {e}"));
+            }
             if let Ok(window) = built {
                 if let Ok(hwnd) = window.hwnd() {
                     // Never in Alt+Tab, never takes the keyboard focus.
@@ -225,8 +238,9 @@ mod windows_impl {
     enum Verdict {
         /// Show it here.
         Show(Place),
-        /// Hide it for now (auto-hidden taskbar, full screen, Start open…).
-        Hide,
+        /// Hide it for now (auto-hidden taskbar, full screen, Start open…),
+        /// and why, for Settings.
+        Hide(&'static str),
         /// It can't work on this setup; the reason goes to Settings.
         Unavailable(String),
     }
@@ -256,25 +270,24 @@ mod windows_impl {
                 shown = None;
                 visible = false;
                 // Still keep Settings told whether it could be switched on.
-                if let Verdict::Unavailable(reason) = check_setup() {
-                    set_status(
-                        &app,
-                        DockStatus {
-                            enabled: ENABLED.load(Ordering::Relaxed),
-                            available: false,
-                            reason: Some(reason),
-                        },
-                    );
-                } else {
-                    set_status(
-                        &app,
-                        DockStatus {
-                            enabled: ENABLED.load(Ordering::Relaxed),
-                            available: true,
-                            reason: None,
-                        },
-                    );
-                }
+                let reason = match check_setup() {
+                    Verdict::Unavailable(reason) => Some(reason),
+                    _ => None,
+                };
+                let enabled = ENABLED.load(Ordering::Relaxed);
+                let note = enabled
+                    .then(|| OPEN_ERROR.lock().ok().and_then(|e| e.clone()))
+                    .flatten();
+                set_status(
+                    &app,
+                    DockStatus {
+                        enabled,
+                        available: reason.is_none(),
+                        reason,
+                        note,
+                        ..Default::default()
+                    },
+                );
                 std::thread::sleep(MEASURE_EVERY);
                 continue;
             };
@@ -292,6 +305,7 @@ mod windows_impl {
                             enabled,
                             available: false,
                             reason: Some(reason),
+                            ..Default::default()
                         },
                     );
                     if visible {
@@ -299,13 +313,14 @@ mod windows_impl {
                         visible = false;
                     }
                 }
-                Verdict::Hide => {
+                Verdict::Hide(why) => {
                     set_status(
                         &app,
                         DockStatus {
                             enabled,
                             available: true,
-                            reason: None,
+                            note: Some(why.into()),
+                            ..Default::default()
                         },
                     );
                     if visible {
@@ -319,7 +334,8 @@ mod windows_impl {
                         DockStatus {
                             enabled,
                             available: true,
-                            reason: None,
+                            showing: true,
+                            ..Default::default()
                         },
                     );
                     if shown.as_ref() != Some(&place) {
@@ -364,10 +380,10 @@ mod windows_impl {
             return Verdict::Unavailable("Your taskbar icons are aligned left, so there's no free space. Centre them in Windows Settings › Personalisation › Taskbar.".into());
         }
         let Some(taskbar) = taskbar() else {
-            return Verdict::Hide;
+            return Verdict::Hide("The taskbar can't be found (Explorer may be restarting).");
         };
         let (Some(tb), Some(monitor)) = (rect_of(taskbar), monitor_rect(taskbar)) else {
-            return Verdict::Hide;
+            return Verdict::Hide("The taskbar can't be measured.");
         };
         let height = tb.bottom - tb.top;
         if tb.top < monitor.top + (monitor.bottom - monitor.top) / 2
@@ -379,10 +395,10 @@ mod windows_impl {
         }
         // Auto-hide slides it down until only a sliver shows.
         if autohide() && monitor.bottom - tb.top < height * 9 / 10 {
-            return Verdict::Hide;
+            return Verdict::Hide("The taskbar is auto-hidden; it comes back with it.");
         }
-        if covered() {
-            return Verdict::Hide;
+        if let Some(why) = covered() {
+            return Verdict::Hide(why);
         }
         Verdict::Show(Place {
             x: 0,
@@ -395,10 +411,10 @@ mod windows_impl {
 
     fn measure(uia: Option<&IUIAutomation>, buttons: &mut Buttons) -> Verdict {
         let Some(taskbar) = taskbar() else {
-            return Verdict::Hide;
+            return Verdict::Hide("The taskbar can't be found (Explorer may be restarting).");
         };
         let Some(tb) = rect_of(taskbar) else {
-            return Verdict::Hide;
+            return Verdict::Hide("The taskbar can't be measured.");
         };
         let scale = unsafe { GetDpiForWindow(taskbar) }.max(96) as f64 / 96.0;
 
@@ -424,7 +440,7 @@ mod windows_impl {
         };
         let width = right - left;
         if (width as f64) < MIN_WIDTH * scale {
-            return Verdict::Hide;
+            return Verdict::Hide("There's too little room left of the taskbar icons.");
         }
 
         let height = tb.bottom - tb.top;
@@ -492,21 +508,18 @@ mod windows_impl {
     /// Something that should have the bottom of the screen to itself: a
     /// full-screen game, video or presentation, or Start, search, Task
     /// View, Widgets and the like (shell flyouts).
-    fn covered() -> bool {
+    fn covered() -> Option<&'static str> {
+        // Only the clear cases: a Direct3D game, or presentation mode.
+        // QUNS_BUSY is left out on purpose, so a wrong "busy" can't keep
+        // the dock away; full-screen windows are caught below instead.
         if let Ok(state) = unsafe { SHQueryUserNotificationState() } {
-            if [
-                QUNS_BUSY,
-                QUNS_RUNNING_D3D_FULL_SCREEN,
-                QUNS_PRESENTATION_MODE,
-            ]
-            .contains(&state)
-            {
-                return true;
+            if [QUNS_RUNNING_D3D_FULL_SCREEN, QUNS_PRESENTATION_MODE].contains(&state) {
+                return Some("A full-screen app or presentation is running.");
             }
         }
         let fg = unsafe { GetForegroundWindow() };
         if fg.is_invalid() {
-            return false;
+            return None;
         }
         let class = class_of(fg);
         if matches!(
@@ -516,17 +529,25 @@ mod windows_impl {
                 | "MultitaskingViewFrame"
                 | "TaskSwitcherWnd"
         ) {
-            return true;
+            return Some("Start, search or Task View is open.");
         }
         if matches!(class.as_str(), "Progman" | "WorkerW" | "Shell_TrayWnd") {
-            return false;
+            return None;
         }
-        // A borderless window covering the whole screen (browsers' F11).
+        // A borderless window covering the taskbar's whole screen
+        // (a video or a browser in F11).
+        let screen = taskbar().and_then(monitor_rect)?;
         match (rect_of(fg), monitor_rect(fg)) {
-            (Some(w), Some(m)) => {
-                w.left <= m.left && w.top <= m.top && w.right >= m.right && w.bottom >= m.bottom
+            (Some(w), Some(m))
+                if m == screen
+                    && w.left <= m.left
+                    && w.top <= m.top
+                    && w.right >= m.right
+                    && w.bottom >= m.bottom =>
+            {
+                Some("A full-screen window is in front.")
             }
-            _ => false,
+            _ => None,
         }
     }
 
