@@ -13,6 +13,7 @@ import { themeById } from "./themes.js";
 import { escapeHtml, formatRemaining, formatElapsedShort } from "./util.js";
 import { coverHtml, guardCovers, prettySource } from "./media.js";
 import { DOCK_DEFAULTS, normaliseDockItems } from "./dockconfig.js";
+import appIcon from "./app-icon.png";
 
 const root = document.documentElement;
 const dock = document.getElementById("dock");
@@ -158,6 +159,12 @@ function itemHtml(v, apart = false) {
             ${button("next", "next", "Next")}
           </span>
         </div>`;
+    case "idle":
+      // Nothing going on: the app's own button, so the dock is always
+      // there to be found, and opens the peninsula.
+      return `<button class="dk-item dk-idle" data-open="" title="Open Dynamic Peninsula" aria-label="Open Dynamic Peninsula">
+          <img class="dk-app" src="${appIcon}" alt="" />
+        </button>`;
     case "headphones":
       return `<button ${slot} class="dk-item dk-headphones ${v.stale ? "is-stale" : ""}" data-open="media" title="${escapeHtml(v.title)}">
           <span class="dk-icon">${icon("headphones")}</span>
@@ -177,14 +184,14 @@ let lastKey = null;
 
 function paint() {
   const now = Date.now();
-  const { apart, items } = views(now);
+  const { apart, items: shown } = views(now);
+  const items = apart || shown.length ? shown : [{ kind: "idle" }];
   const key = [root.dataset.dockLook, root.dataset.theme, root.dataset.mode, keyOf(apart), ...items.map(keyOf)].join("|");
   if (key !== lastKey) {
     lastKey = key;
     dock.innerHTML =
       (apart ? itemHtml(apart, true) + (items.length ? `<span class="dk-sep" aria-hidden="true"></span>` : "") : "") +
       items.map((v) => itemHtml(v)).join("");
-    dock.classList.toggle("is-empty", !apart && !items.length);
   }
   // Only the times move every second.
   const times = { countdown: apart ?? items.find((v) => v.kind === "countdown"), stopwatch: items.find((v) => v.kind === "stopwatch") };
@@ -228,7 +235,7 @@ let hitFrame = 0;
 function reportHitRect() {
   cancelAnimationFrame(hitFrame);
   hitFrame = requestAnimationFrame(() => {
-    const r = dock.classList.contains("is-empty") ? { left: 0, top: 0, width: 0, height: 0 } : dock.getBoundingClientRect();
+    const r = dock.getBoundingClientRect();
     call("set_hit_rect", { rect: { x: r.left, y: r.top, width: r.width, height: r.height } }).catch(() => {});
   });
 }
