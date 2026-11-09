@@ -202,18 +202,23 @@ export const isAboveDock = () => aboveDock;
 export async function setAboveDock(on) {
   if (aboveDock === on) return;
   aboveDock = on;
+  // The slim bar is never drawn in this mode: the dock shows all of it.
+  stage.dataset.aboveDock = String(on);
   if (!inTauri) return;
   if (on) {
-    const { win } = await windowApi();
-    await win.hide();
+    // Rust hides it, and keeps it hidden until it is opened from the dock.
+    await call("set_peninsula_open", { open: false }).catch(() => {});
   } else {
     await place(anchor);
   }
 }
 
 /** Opens upward from just above the dock, its left edges lined up. */
+let opening = false;
+
 export async function showAboveDock() {
   if (!inTauri || !aboveDock) return;
+  opening = true;
   const rect = await call("dock_rect").catch(() => null);
   const api = await windowApi();
   if (rect) {
@@ -229,15 +234,16 @@ export async function showAboveDock() {
       true
     );
   }
-  await api.win.show();
-  await api.win.setAlwaysOnTop(true);
+  // Closed again while this was being placed: stay hidden.
+  if (!opening) return;
+  await call("set_peninsula_open", { open: true }).catch(() => {});
 }
 
-/** Folded away again: with the dock on, that means hidden. */
+/** Folded away again: with the dock on, that means hidden, at once. */
 export async function hideAboveDock() {
+  opening = false;
   if (!inTauri || !aboveDock) return;
-  const { win } = await windowApi();
-  await win.hide();
+  await call("set_peninsula_open", { open: false }).catch(() => {});
 }
 
 // After the user drags the window, work out where the bar ended up and
@@ -396,6 +402,7 @@ function initSection() {
 
 export async function initLayout({ onLayout, onLock, aboveDock: startAboveDock = false }) {
   aboveDock = startAboveDock;
+  stage.dataset.aboveDock = String(aboveDock);
   hooks = { onLayout, onLock };
   applyLook();
   applyMode();

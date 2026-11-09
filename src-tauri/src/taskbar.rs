@@ -58,7 +58,7 @@ pub struct DockLayout {
 }
 
 #[cfg(windows)]
-pub use windows_impl::{init, layout, set_enabled, status};
+pub use windows_impl::{dock_mode, init, layout, set_enabled, set_peninsula_open, status};
 
 #[cfg(not(windows))]
 mod fallback {
@@ -66,6 +66,12 @@ mod fallback {
     use tauri::AppHandle;
 
     pub fn init(_app: &AppHandle) {}
+
+    pub fn dock_mode() -> bool {
+        false
+    }
+
+    pub fn set_peninsula_open(_app: &AppHandle, _open: bool) {}
 
     pub fn layout() -> Option<super::DockLayout> {
         None
@@ -84,7 +90,7 @@ mod fallback {
 }
 
 #[cfg(not(windows))]
-pub use fallback::{init, layout, set_enabled, status};
+pub use fallback::{dock_mode, init, layout, set_enabled, set_peninsula_open, status};
 
 #[cfg(windows)]
 mod windows_impl {
@@ -137,6 +143,10 @@ mod windows_impl {
     const MIN_WIDTH: f64 = 96.0;
 
     static ENABLED: AtomicBool = AtomicBool::new(false);
+    /// The peninsula may be on screen while the dock is on: only while it is
+    /// open above the dock, after a click on the dock. Otherwise the loop
+    /// below hides it, whatever the page does.
+    static PENINSULA_OPEN: AtomicBool = AtomicBool::new(false);
     static STATUS: Mutex<Option<DockStatus>> = Mutex::new(None);
     /// Why the dock window couldn't be opened, if it couldn't.
     static OPEN_ERROR: Mutex<Option<String>> = Mutex::new(None);
@@ -145,6 +155,41 @@ mod windows_impl {
 
     pub fn layout() -> Option<DockLayout> {
         LAYOUT.lock().ok().and_then(|l| l.clone())
+    }
+
+    /// The dock is on and works here, so the peninsula doesn't hang at its
+    /// own spot any more.
+    pub fn dock_mode() -> bool {
+        let s = status();
+        s.enabled && s.available
+    }
+
+    /// Lets the peninsula show above the dock (it has placed itself there),
+    /// or hides it again at once.
+    pub fn set_peninsula_open(app: &AppHandle, open: bool) {
+        PENINSULA_OPEN.store(open, Ordering::Relaxed);
+        let Some(main) = app.get_webview_window("main") else {
+            return;
+        };
+        if open {
+            let _ = main.show();
+            let _ = main.set_always_on_top(true);
+        } else if dock_mode() {
+            let _ = main.hide();
+        }
+    }
+
+    /// With the dock on, the peninsula is never on screen unless it was
+    /// opened from the dock.
+    fn guard_peninsula(app: &AppHandle) {
+        if !dock_mode() || PENINSULA_OPEN.load(Ordering::Relaxed) {
+            return;
+        }
+        if let Some(main) = app.get_webview_window("main") {
+            if main.is_visible().unwrap_or(false) {
+                let _ = main.hide();
+            }
+        }
     }
 
     pub fn status() -> DockStatus {
@@ -173,6 +218,7 @@ mod windows_impl {
     /// costs nothing while off.
     pub fn set_enabled(app: &AppHandle, on: bool) {
         ENABLED.store(on, Ordering::Relaxed);
+        PENINSULA_OPEN.store(false, Ordering::Relaxed);
         let existing = app.get_webview_window(DOCK);
         if on && existing.is_none() {
             let built = WebviewWindowBuilder::new(app, DOCK, WebviewUrl::App("dock.html".into()))
@@ -266,6 +312,7 @@ mod windows_impl {
 
         loop {
             std::thread::sleep(TICK);
+            guard_peninsula(&app);
             let Some(window) = app.get_webview_window(DOCK) else {
                 shown = None;
                 visible = false;
