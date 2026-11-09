@@ -95,9 +95,20 @@ function syncAboveDock() {
 // The dock is on and can work here: the peninsula leaves its spot.
 const wantAboveDock = () => Boolean(getSettings().dock && dockStatus().available);
 
+// Switching the dock on (usually from Settings, so the panel is open at
+// the top) folds the peninsula away: it only shows again when the dock is
+// clicked or a countdown ends. Status updates only ever hide it.
 async function syncDockMode() {
-  await setAboveDock(wantAboveDock());
-  syncAboveDock();
+  const want = wantAboveDock();
+  const entering = want && !isAboveDock();
+  await setAboveDock(want);
+  if (entering && state() !== "collapsed") {
+    clearTimeout(closeTimer);
+    hovering = false;
+    document.activeElement?.blur();
+    setState("collapsed");
+  }
+  if (isAboveDock() && state() === "collapsed") hideAboveDock();
 }
 
 // Typing somewhere keeps the panel open even if the mouse wanders off;
