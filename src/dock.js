@@ -74,14 +74,23 @@ const quieted = new Set();
 const remaining = (cd, now) => (cd.running ? Math.max(0, cd.endsAt - now) : cd.remainingMs);
 const elapsed = (sw, now) => (sw.running ? sw.accumulated + (now - sw.startedAt) : sw.accumulated);
 
+/** The pinned countdown: minutes:seconds under an hour ("12:34"),
+ *  hours:minutes above it ("1:25"). Rounded up, like the peninsula. */
+function dockTime(ms) {
+  const total = Math.ceil(Math.max(0, ms) / 1000);
+  if (total < 3600) return formatRemaining(total * 1000);
+  const minutes = Math.ceil(total / 60);
+  return `${Math.floor(minutes / 60)}:${String(minutes % 60).padStart(2, "0")}`;
+}
+
 function countdownView(now) {
   const running = countdowns.filter((cd) => cd.running && cd.endsAt > now).sort((a, b) => a.endsAt - b.endsAt);
   const rang = countdowns.find((cd) => cd.done && !quieted.has(cd.id) && now - cd.endsAt >= 0 && now - cd.endsAt < RING_MS);
-  if (rang && !running.length) return { kind: "countdown", ringing: true, id: rang.id, name: rang.name, time: "Time's up", more: 0 };
+  if (rang && !running.length) return { kind: "countdown", ringing: true, id: rang.id, name: rang.name, time: dockTime(0), more: 0 };
   const cd = running[0];
   if (!cd) return null;
   const left = remaining(cd, now);
-  return { kind: "countdown", name: cd.name, time: formatRemaining(left), urgent: left <= URGENT_MS, more: running.length - 1 };
+  return { kind: "countdown", name: cd.name, time: dockTime(left), urgent: left <= URGENT_MS, more: running.length - 1 };
 }
 
 function stopwatchView(now) {
@@ -116,16 +125,17 @@ function headphonesView() {
 
 const VIEWS = { countdown: countdownView, stopwatch: stopwatchView, media: mediaView, headphones: headphonesView };
 
-/** The views to show, left to right: { apart, items }. */
+/** What the dock shows: the countdown pinned on the left (`apart`), and
+ *  right of it the bar with the first of the other items, in the user's
+ *  order, that has something going on (`items`: none or one). */
 function views(now) {
   const on = settings.dockItems.filter((i) => i.on);
-  // Apart, the countdown leaves the order and goes first, in its own pill.
-  const apart = settings.dockApart && on.some((i) => i.id === "countdown") ? countdownView(now) : null;
-  const items = on
-    .filter((i) => !(settings.dockApart && i.id === "countdown"))
+  const apart = on.some((i) => i.id === "countdown") ? countdownView(now) : null;
+  const first = on
+    .filter((i) => i.id !== "countdown")
     .map((i) => VIEWS[i.id](now))
-    .filter(Boolean);
-  return { apart, items };
+    .find(Boolean);
+  return { apart, items: first ? [first] : [] };
 }
 
 /* ---------- painting ---------- */
@@ -144,7 +154,6 @@ function itemHtml(v, apart = false) {
       return `<button ${slot} class="dk-item dk-countdown ${apart ? "is-apart" : ""} ${v.urgent ? "is-urgent" : ""} ${v.ringing ? "is-ringing" : ""}"
           ${v.ringing ? `data-quiet="${v.id}"` : `data-open="countdowns"`} title="${v.ringing ? "Click to silence" : escapeHtml(v.name)}">
           <span class="dk-icon">${icon(v.ringing ? "bell" : "countdown")}</span>
-          <span class="dk-text">${escapeHtml(v.name)}</span>
           <span class="dk-time" data-time="countdown">${v.time}</span>
           ${v.more > 0 ? `<span class="dk-badge">+${v.more}</span>` : ""}
         </button>`;
@@ -197,9 +206,12 @@ function paint() {
   const key = [root.dataset.dockLook, root.dataset.theme, root.dataset.mode, keyOf(apart), ...items.map(keyOf)].join("|");
   if (key !== lastKey) {
     lastKey = key;
+    const bar = items.length && items[0].kind !== "idle";
     dock.innerHTML =
-      (apart ? itemHtml(apart, true) + (items.length ? `<span class="dk-sep" aria-hidden="true"></span>` : "") : "") +
-      items.map((v) => itemHtml(v)).join("");
+      (apart ? itemHtml(apart, true) : "") +
+      (bar
+        ? `<div data-slot class="dk-bar">${items.map((v) => itemHtml(v, true)).join("")}</div>`
+        : items.map((v) => itemHtml(v)).join(""));
   }
   // Only the times move every second.
   const times = { countdown: apart ?? items.find((v) => v.kind === "countdown"), stopwatch: items.find((v) => v.kind === "stopwatch") };
