@@ -5,6 +5,7 @@
 import { call, on, inTauri } from "./tauri.js";
 import { icon } from "./icons.js";
 import { escapeHtml } from "./util.js";
+import { t } from "./i18n.js";
 import { getSettings } from "./settings.js";
 import { getLook } from "./layout.js";
 
@@ -64,10 +65,10 @@ function batteryText() {
 
 function earText(p) {
   const { left, right } = p;
-  if (left.inEar && right.inEar) return "Both earbuds in";
-  if (left.inEar) return "Left earbud in";
-  if (right.inEar) return "Right earbud in";
-  return "Earbuds out";
+  if (left.inEar && right.inEar) return t("Both earbuds in");
+  if (left.inEar) return t("Left earbud in");
+  if (right.inEar) return t("Right earbud in");
+  return t("Earbuds out");
 }
 
 function raise(kind) {
@@ -183,8 +184,8 @@ export async function initAudio(onChange) {
 
 function podHtml(label, pod, title) {
   const cls = ["pod", pod.inEar ? "is-in" : "", pod.charging ? "is-charging" : ""].join(" ");
-  const state = pod.inEar ? " · in ear" : pod.charging ? " · charging" : "";
-  return `<span class="${cls}" title="${title}${state}">
+  const state = pod.inEar ? ` · ${t("in ear")}` : pod.charging ? ` · ${t("charging")}` : "";
+  return `<span class="${cls}" title="${t(title)}${state}">
       <b>${label}</b>${pct(pod.battery)}${pod.charging ? icon("bolt") : ""}
     </span>`;
 }
@@ -199,8 +200,8 @@ export function render() {
 
   const p = currentPods();
   const status = p
-    ? `<div class="pods ${p.fresh ? "" : "is-stale"}" title="${p.fresh ? escapeHtml(p.model) : "Last known: open the case to refresh"}">
-        ${podHtml("L", p.left, "Left")}${podHtml("R", p.right, "Right")}${podHtml("Case", p.case, "Case")}
+    ? `<div class="pods ${p.fresh ? "" : "is-stale"}" title="${p.fresh ? escapeHtml(p.model) : t("Last known: open the case to refresh")}">
+        ${podHtml("L", p.left, "Left")}${podHtml("R", p.right, "Right")}${podHtml(t("Case"), p.case, "Case")}
       </div>`
     : device.battery != null
       ? `<div class="pods"><span class="pod">${pct(device.battery)}</span></div>`
@@ -208,7 +209,7 @@ export function render() {
 
   boxEl.innerHTML = `
     <div class="audio-strip">
-      <button class="audio-out ${menuOpen ? "is-open" : ""}" id="audio-out" title="Change output: ${escapeHtml(device.name)}">
+      <button class="audio-out ${menuOpen ? "is-open" : ""}" id="audio-out" title="${t("Change output: {name}", { name: escapeHtml(device.name) })}">
         ${deviceIcon(device)}<span>${escapeHtml(shortName(device))}</span>${devices.length > 1 ? icon("up") : ""}
       </button>
       ${status}

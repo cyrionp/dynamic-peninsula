@@ -12,8 +12,11 @@ import { inTauri } from "./tauri.js";
 import { escapeHtml } from "./util.js";
 import { DOCK_ITEMS, DOCK_LOOKS, DOCK_DEFAULTS, normaliseDockItems } from "./dockconfig.js";
 import { dockStatus } from "./dockctl.js";
+import { t, LANGUAGES, systemLang } from "./i18n.js";
 
 const DEFAULTS = {
+  // Interface language; the system language until one is picked.
+  lang: systemLang(),
   theme: "lagoon",
   mode: "dark",
   bar: "smart",
@@ -133,6 +136,9 @@ export function initSettings(onChange) {
     const mode = e.target.closest("[data-mode-pick]");
     if (mode) return update({ mode: mode.dataset.modePick });
 
+    const lang = e.target.closest("[data-lang-pick]");
+    if (lang) return update({ lang: lang.dataset.langPick });
+
     const bar = e.target.closest("[data-bar]");
     if (bar) return update({ bar: bar.dataset.bar });
 
@@ -186,41 +192,50 @@ export function initSettings(onChange) {
 export function render() {
   const page = document.getElementById("settings-page");
   const barHint = BAR_MODES.find((m) => m.id === settings.bar)?.hint ?? "";
-  const smartOn = settings.smart.filter((s) => s.on).map((s) => SMART_ITEMS[s.id].hint);
+  const smartOn = settings.smart.filter((s) => s.on).map((s) => t(SMART_ITEMS[s.id].hint));
   const smartHint = smartOn.length
-    ? `Shows ${smartOn.join(", then ")}; otherwise the clock.`
-    : "Everything is off, so it shows the clock.";
+    ? t("Shows {list}; otherwise the clock.", { list: smartOn.join(t(", then ")) })
+    : t("Everything is off, so it shows the clock.");
 
   const group = (title, body) => `<section class="settings-group"><h2>${title}</h2>${body}</section>`;
 
   page.innerHTML = [
     group(
-      "Appearance",
+      t("Language"),
       `
-      <h3>Theme</h3>
+      <div class="chips">
+        ${LANGUAGES.map(
+          (l) => `<button class="chip ${l.id === settings.lang ? "is-active" : ""}" data-lang-pick="${l.id}">${l.label}</button>`
+        ).join("")}
+      </div>`
+    ),
+    group(
+      t("Appearance"),
+      `
+      <h3>${t("Theme")}</h3>
       <div class="chips mode-chips">
         ${MODES.map(
-          (m) => `<button class="chip ${m.id === settings.mode ? "is-active" : ""}" data-mode-pick="${m.id}">${m.label}</button>`
+          (m) => `<button class="chip ${m.id === settings.mode ? "is-active" : ""}" data-mode-pick="${m.id}">${t(m.label)}</button>`
         ).join("")}
       </div>
       <div class="theme-grid">
         ${THEMES.map(
-          (t) => `
-          <button class="theme-tile ${t.id === settings.theme ? "is-active" : ""}" data-theme="${t.id}" data-mode="${settings.mode}" data-theme-pick="${t.id}" title="${t.blurb}">
+          (theme) => `
+          <button class="theme-tile ${theme.id === settings.theme ? "is-active" : ""}" data-theme="${theme.id}" data-mode="${settings.mode}" data-theme-pick="${theme.id}" title="${t(theme.blurb)}">
             <span class="tile-pill"><span class="dot"></span><i data-icon="media"></i></span>
-            <span class="tile-name">${t.name}</span>
+            <span class="tile-name">${theme.name}</span>
           </button>`
         ).join("")}
       </div>
       <div id="layout-look-box"></div>`
     ),
     group(
-      "Slim bar",
+      t("Slim bar"),
       `
-      <h3>Shows</h3>
+      <h3>${t("Shows")}</h3>
       <div class="chips">
         ${BAR_MODES.map(
-          (m) => `<button class="chip ${m.id === settings.bar ? "is-active" : ""}" data-bar="${m.id}">${m.label}</button>`
+          (m) => `<button class="chip ${m.id === settings.bar ? "is-active" : ""}" data-bar="${m.id}">${t(m.label)}</button>`
         ).join("")}
       </div>
       ${
@@ -231,10 +246,10 @@ export function render() {
                   (s, i, all) => `
                 <li class="smart-item ${s.on ? "" : "is-off"}" data-smart="${s.id}">
                   <span class="smart-rank">${i + 1}</span>
-                  <span class="smart-label">${SMART_ITEMS[s.id].label}</span>
-                  <button class="icon-btn" data-smart-move="-1" title="Move up" ${i === 0 ? "disabled" : ""}>${icon("up")}</button>
-                  <button class="icon-btn" data-smart-move="1" title="Move down" ${i === all.length - 1 ? "disabled" : ""}>${icon("down")}</button>
-                  <input type="checkbox" class="switch" data-smart-toggle="${s.id}" title="Show in Smart" ${s.on ? "checked" : ""} />
+                  <span class="smart-label">${t(SMART_ITEMS[s.id].label)}</span>
+                  <button class="icon-btn" data-smart-move="-1" title="${t("Move up")}" ${i === 0 ? "disabled" : ""}>${icon("up")}</button>
+                  <button class="icon-btn" data-smart-move="1" title="${t("Move down")}" ${i === all.length - 1 ? "disabled" : ""}>${icon("down")}</button>
+                  <input type="checkbox" class="switch" data-smart-toggle="${s.id}" title="${t("Show in Smart")}" ${s.on ? "checked" : ""} />
                 </li>`
                 )
                 .join("")}
@@ -242,51 +257,51 @@ export function render() {
             <p class="hint">${smartHint}</p>`
           : `<p class="hint">${barHint}</p>`
       }
-      <h3>Behaviour</h3>
+      <h3>${t("Behaviour")}</h3>
       <label class="switch-row">
-        <span>24-hour clock</span>
+        <span>${t("24-hour clock")}</span>
         <input type="checkbox" class="switch" id="set-24h" ${settings.clock24 ? "checked" : ""} />
       </label>
       <label class="switch-row">
-        <span>Only show when there's something to show</span>
+        <span>${t("Only show when there's something to show")}</span>
         <input type="checkbox" class="switch" id="set-hide-idle" ${settings.hideIdle ? "checked" : ""} />
       </label>
-      <p class="hint">Music, timers and pop-ups bring it out. Otherwise point at its spot to open it.</p>`
+      <p class="hint">${t("Music, timers and pop-ups bring it out. Otherwise point at its spot to open it.")}</p>`
     ),
     dockGroup(group),
-    group("Position &amp; lock", `<div id="layout-position-box"></div>`),
+    group(t("Position & lock"), `<div id="layout-position-box"></div>`),
     group(
-      "Sounds &amp; alerts",
+      t("Sounds & alerts"),
       `
-      <h3>When a countdown ends</h3>
+      <h3>${t("When a countdown ends")}</h3>
       <label class="switch-row">
-        <span>Play a sound</span>
+        <span>${t("Play a sound")}</span>
         <input type="checkbox" class="switch" id="set-sound" ${settings.sound ? "checked" : ""} />
       </label>
       <div class="switch-row">
-        <span>Volume</span>
+        <span>${t("Volume")}</span>
         <input type="range" id="set-volume" min="0.1" max="1" step="0.1" value="${settings.volume}" />
-        <button class="mini" id="test-sound">Test</button>
+        <button class="mini" id="test-sound">${t("Test")}</button>
       </div>
 
-      <h3>Headphones</h3>
+      <h3>${t("Headphones")}</h3>
       <label class="switch-row">
-        <span>Show battery when they connect, and which earbud is in</span>
+        <span>${t("Show battery when they connect, and which earbud is in")}</span>
         <input type="checkbox" class="switch" id="set-headphones" ${settings.headphoneAlerts ? "checked" : ""} />
       </label>
-      <p class="hint">AirPods battery and in-ear status come from their Bluetooth signal; other headsets show the battery Windows reports.</p>`
+      <p class="hint">${t("AirPods battery and in-ear status come from their Bluetooth signal; other headsets show the battery Windows reports.")}</p>`
     ),
     group(
-      "App",
+      t("App"),
       `
-      <h3>Startup</h3>
+      <h3>${t("Startup")}</h3>
       <label class="switch-row">
-        <span>Launch when the computer starts</span>
+        <span>${t("Launch when the computer starts")}</span>
         <input type="checkbox" class="switch" id="set-autostart" ${autostart ? "checked" : ""} ${autostart === null ? "disabled" : ""} />
       </label>
-      ${autostart === null && !inTauri ? `<p class="hint">Available in the desktop app.</p>` : ""}
+      ${autostart === null && !inTauri ? `<p class="hint">${t("Available in the desktop app.")}</p>` : ""}
 
-      <h3>Updates</h3>
+      <h3>${t("Updates")}</h3>
       <div id="updates-box"></div>`
     ),
   ].join("");
@@ -309,10 +324,10 @@ function orderList(items, labels, attr) {
         (s, i, all) => `
       <li class="smart-item ${s.on ? "" : "is-off"}" data-${attr}-item="${s.id}">
         <span class="smart-rank">${i + 1}</span>
-        <span class="smart-label">${labels[s.id].label}</span>
-        <button class="icon-btn" data-${attr}-move="-1" title="Move up" ${i === 0 ? "disabled" : ""}>${icon("up")}</button>
-        <button class="icon-btn" data-${attr}-move="1" title="Move down" ${i === all.length - 1 ? "disabled" : ""}>${icon("down")}</button>
-        <input type="checkbox" class="switch" data-${attr}-toggle="${s.id}" title="Show" ${s.on ? "checked" : ""} />
+        <span class="smart-label">${t(labels[s.id].label)}</span>
+        <button class="icon-btn" data-${attr}-move="-1" title="${t("Move up")}" ${i === 0 ? "disabled" : ""}>${icon("up")}</button>
+        <button class="icon-btn" data-${attr}-move="1" title="${t("Move down")}" ${i === all.length - 1 ? "disabled" : ""}>${icon("down")}</button>
+        <input type="checkbox" class="switch" data-${attr}-toggle="${s.id}" title="${t("Show")}" ${s.on ? "checked" : ""} />
       </li>`
       )
       .join("")}
@@ -324,37 +339,38 @@ function dockGroup(group) {
   const status = dockStatus();
   // Unavailable here: it can still be switched off, never on.
   const blocked = !status.available && !settings.dock;
-  const reason = !status.available && status.reason ? `<p class="hint">${escapeHtml(status.reason)}</p>` : "";
+  const title = `${t("Taskbar dock")} <small class="tag">${t("experimental")}</small>`;
+  const reason = !status.available && status.reason ? `<p class="hint">${escapeHtml(t(status.reason))}</p>` : "";
   if (!inTauri) {
-    return group("Taskbar dock <small class=\"tag\">experimental</small>", `<p class="hint">Available in the desktop app on Windows 11.</p>`);
+    return group(title, `<p class="hint">${t("Available in the desktop app on Windows 11.")}</p>`);
   }
-  const lookHint = DOCK_LOOKS.find((l) => l.id === settings.dockLook)?.hint ?? "";
+  const lookHint = t(DOCK_LOOKS.find((l) => l.id === settings.dockLook)?.hint ?? "");
   return group(
-    "Taskbar dock <small class=\"tag\">experimental</small>",
+    title,
     `
     <label class="switch-row">
-      <span>Show a dock on the left of the taskbar</span>
+      <span>${t("Show a dock on the left of the taskbar")}</span>
       <input type="checkbox" class="switch" id="set-dock" ${settings.dock ? "checked" : ""} ${blocked ? "disabled" : ""} />
     </label>
-    ${reason || `<p class="hint">Sits in the empty space left of the centred taskbar icons, on the main screen. Turn it off here or from the tray icon.</p>`}
-    ${settings.dock && status.available ? `<p class="hint dock-now">${status.showing ? "Right now: on the taskbar." : `Hidden right now: ${escapeHtml(status.note ?? "starting…")}`}</p>` : ""}
+    ${reason || `<p class="hint">${t("Sits in the empty space left of the centred taskbar icons, on the main screen. Turn it off here or from the tray icon.")}</p>`}
+    ${settings.dock && status.available ? `<p class="hint dock-now">${status.showing ? t("Right now: on the taskbar.") : t("Hidden right now: {why}", { why: escapeHtml(t(status.note ?? "starting…")) })}</p>` : ""}
     ${
       settings.dock
         ? `
-    <h3>Look</h3>
+    <h3>${t("Look")}</h3>
     <div class="chips">
-      ${DOCK_LOOKS.map((l) => `<button class="chip ${l.id === settings.dockLook ? "is-active" : ""}" data-dock-look="${l.id}">${l.label}</button>`).join("")}
+      ${DOCK_LOOKS.map((l) => `<button class="chip ${l.id === settings.dockLook ? "is-active" : ""}" data-dock-look="${l.id}">${t(l.label)}</button>`).join("")}
     </div>
     <p class="hint">${lookHint}</p>
-    <h3>Shows</h3>
+    <h3>${t("Shows")}</h3>
     <label class="switch-row">
-      <span>A running countdown stands apart, first</span>
+      <span>${t("A running countdown stands apart, first")}</span>
       <input type="checkbox" class="switch" id="set-dock-apart" ${settings.dockApart ? "checked" : ""} />
     </label>
     <p class="hint">${
       settings.dockApart
-        ? "Countdowns come before everything else, in a pill of their own, and never get cut short."
-        : "Countdowns take their place in the order below, like everything else."
+        ? t("Countdowns come before everything else, in a pill of their own, and never get cut short.")
+        : t("Countdowns take their place in the order below, like everything else.")
     }</p>
     ${orderList(settings.dockItems, DOCK_ITEMS, "dock")}`
         : ""

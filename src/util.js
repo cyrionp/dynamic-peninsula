@@ -1,3 +1,5 @@
+import { locale } from "./i18n.js";
+
 export function escapeHtml(s) {
   return String(s)
     .replace(/&/g, "&amp;")
@@ -42,7 +44,7 @@ export function formatElapsedShort(ms) {
 }
 
 export function formatClock(date, use24h) {
-  return date.toLocaleTimeString([], {
+  return date.toLocaleTimeString(locale(), {
     hour: "2-digit",
     minute: "2-digit",
     hour12: !use24h,

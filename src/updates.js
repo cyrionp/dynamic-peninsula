@@ -3,6 +3,7 @@
 
 import { inTauri } from "./tauri.js";
 import { escapeHtml } from "./util.js";
+import { t } from "./i18n.js";
 
 // idle | checking | latest | available | installing | error
 let state = { status: "idle" };
@@ -57,15 +58,15 @@ export async function installUpdate() {
 function statusLine() {
   switch (state.status) {
     case "checking":
-      return "Checking…";
+      return t("Checking…");
     case "latest":
-      return "You're on the latest version.";
+      return t("You're on the latest version.");
     case "available":
-      return `Version ${escapeHtml(state.next)} is available.`;
+      return t("Version {version} is available.", { version: escapeHtml(state.next) });
     case "installing":
-      return `Downloading… ${state.progress}%`;
+      return t("Downloading… {percent}%", { percent: state.progress });
     case "error":
-      return `Couldn't check for updates: ${escapeHtml(state.message)}`;
+      return t("Couldn't check for updates: {error}", { error: escapeHtml(state.message) });
     default:
       return "";
   }
@@ -76,19 +77,19 @@ export function paintUpdates() {
   if (!box) return;
 
   if (!inTauri) {
-    box.innerHTML = `<p class="hint">Updates work in the desktop app only.</p>`;
+    box.innerHTML = `<p class="hint">${t("Updates work in the desktop app only.")}</p>`;
     return;
   }
 
   const busy = state.status === "checking" || state.status === "installing";
   const button =
     state.status === "available"
-      ? `<button class="mini" id="install-update">Install & restart</button>`
-      : `<button class="mini" id="check-updates" ${busy ? "disabled" : ""}>Check now</button>`;
+      ? `<button class="mini" id="install-update">${t("Install & restart")}</button>`
+      : `<button class="mini" id="check-updates" ${busy ? "disabled" : ""}>${t("Check now")}</button>`;
 
   box.innerHTML = `
     <div class="switch-row">
-      <span>Version ${escapeHtml(version)}</span>
+      <span>${t("Version {version}", { version: escapeHtml(version) })}</span>
       ${button}
     </div>
     <p class="hint">${statusLine()}</p>

@@ -25,22 +25,22 @@
         <div class="alert" id="alert">
           <span class="alert-bell" data-icon="bell"></span>
           <div class="alert-text">
-            <small>Time's up</small>
+            <small data-i18n>Time's up</small>
             <strong id="alert-name"></strong>
           </div>
-          <button class="mini" id="alert-restart">Restart</button>
-          <button class="icon-btn" id="alert-dismiss" title="Dismiss" data-icon="close"></button>
+          <button class="mini" id="alert-restart" data-i18n>Restart</button>
+          <button class="icon-btn" id="alert-dismiss" title="Dismiss" data-i18n-title data-icon="close"></button>
         </div>
 
         <!-- Expanded: the panels -->
         <div class="panel">
           <nav class="tabs" id="tabs">
-            <button class="tab" data-page="media"><i data-icon="media"></i><span>Media</span></button>
-            <button class="tab" data-page="timers"><i data-icon="stopwatch"></i><span>Stopwatch</span></button>
-            <button class="tab" data-page="countdowns"><i data-icon="countdown"></i><span>Countdown</span></button>
-            <button class="tab" data-page="notes"><i data-icon="note"></i><span>Notes</span></button>
-            <button class="tab" data-page="todo"><i data-icon="todo"></i><span>To-do</span></button>
-            <button class="tab" data-page="settings"><i data-icon="settings"></i><span>Settings</span></button>
+            <button class="tab" data-page="media"><i data-icon="media"></i><span data-i18n>Media</span></button>
+            <button class="tab" data-page="timers"><i data-icon="stopwatch"></i><span data-i18n>Stopwatch</span></button>
+            <button class="tab" data-page="countdowns"><i data-icon="countdown"></i><span data-i18n>Countdown</span></button>
+            <button class="tab" data-page="notes"><i data-icon="note"></i><span data-i18n>Notes</span></button>
+            <button class="tab" data-page="todo"><i data-icon="todo"></i><span data-i18n>To-do</span></button>
+            <button class="tab" data-page="settings"><i data-icon="settings"></i><span data-i18n>Settings</span></button>
           </nav>
 
           <section class="page" data-page="media" id="media-page">
@@ -51,28 +51,28 @@
 
           <section class="page" data-page="timers">
             <div class="row">
-              <strong>Stopwatches</strong>
-              <button class="mini" id="add-sw"><i data-icon="plus"></i>Add</button>
+              <strong data-i18n>Stopwatches</strong>
+              <button class="mini" id="add-sw"><i data-icon="plus"></i><span data-i18n>Add</span></button>
             </div>
             <ul id="sw-list" class="list"></ul>
           </section>
 
           <section class="page" data-page="countdowns">
             <form id="cd-form" class="cd-form" data-mode="duration" autocomplete="off">
-              <input name="name" class="field cd-name" placeholder="Name" spellcheck="false" />
+              <input name="name" class="field cd-name" placeholder="Name" data-i18n-placeholder spellcheck="false" />
               <div class="seg">
-                <button type="button" data-mode="duration" class="is-active">For</button>
-                <button type="button" data-mode="until">Until</button>
+                <button type="button" data-mode="duration" class="is-active" data-i18n>For</button>
+                <button type="button" data-mode="until" data-i18n>Until</button>
               </div>
               <div class="cd-duration">
-                <input name="h" class="field num" type="number" min="0" max="99" placeholder="h" />
-                <input name="m" class="field num" type="number" min="0" max="59" placeholder="m" value="5" />
-                <input name="s" class="field num" type="number" min="0" max="59" placeholder="s" />
+                <input name="h" class="field num" type="number" min="0" max="99" placeholder="h" data-i18n-placeholder />
+                <input name="m" class="field num" type="number" min="0" max="59" placeholder="m" data-i18n-placeholder value="5" />
+                <input name="s" class="field num" type="number" min="0" max="59" placeholder="s" data-i18n-placeholder />
               </div>
               <div class="cd-until">
                 <input name="until" class="field" type="time" value="18:30" />
               </div>
-              <button class="icon-btn accent" type="submit" title="Add countdown" data-icon="plus"></button>
+              <button class="icon-btn accent" type="submit" title="Add countdown" data-i18n-title data-icon="plus"></button>
             </form>
             <ul id="cd-list" class="list"></ul>
           </section>
@@ -81,26 +81,26 @@
             <div class="notes" id="notes" data-view="grid">
               <div class="notes-grid">
                 <div class="row">
-                  <strong>Notes</strong>
-                  <button class="mini" id="note-add"><i data-icon="plus"></i>New note</button>
+                  <strong data-i18n>Notes</strong>
+                  <button class="mini" id="note-add"><i data-icon="plus"></i><span data-i18n>New note</span></button>
                 </div>
                 <ul id="note-grid" class="note-cards"></ul>
               </div>
               <div class="notes-editor">
                 <div class="note-head">
-                  <button class="icon-btn" id="note-back" title="All notes" data-icon="back"></button>
-                  <input id="note-title" class="field note-title" placeholder="Title (optional)" spellcheck="false" autocomplete="off" />
+                  <button class="icon-btn" id="note-back" title="All notes" data-i18n-title data-icon="back"></button>
+                  <input id="note-title" class="field note-title" placeholder="Title (optional)" data-i18n-placeholder spellcheck="false" autocomplete="off" />
                   <button class="icon-btn pin" id="note-pin" title="Pin to the top" data-icon="pin"></button>
-                  <button class="icon-btn danger" id="note-delete" title="Delete note" data-icon="trash"></button>
+                  <button class="icon-btn danger" id="note-delete" title="Delete note" data-i18n-title data-icon="trash"></button>
                 </div>
-                <textarea id="note" class="note" placeholder="Jot something… it saves as you type." spellcheck="false"></textarea>
+                <textarea id="note" class="note" placeholder="Jot something… it saves as you type." data-i18n-placeholder spellcheck="false"></textarea>
               </div>
             </div>
           </section>
 
           <section class="page" data-page="todo">
             <form id="todo-form" class="todo-form">
-              <input id="todo-input" class="field" placeholder="Add a task and press Enter" />
+              <input id="todo-input" class="field" placeholder="Add a task and press Enter" data-i18n-placeholder />
             </form>
             <ul id="todo-list" class="list"></ul>
           </section>

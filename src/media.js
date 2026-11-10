@@ -4,6 +4,7 @@
 import { call, on, inTauri } from "./tauri.js";
 import { icon } from "./icons.js";
 import { escapeHtml, formatTrack } from "./util.js";
+import { t } from "./i18n.js";
 
 let state = { available: false, hasSession: false };
 let pageEl = null;
@@ -156,11 +157,11 @@ export function render() {
   if (!pageEl) return;
   syncProgress();
   if (!state.available) {
-    nowEl.innerHTML = `<div class="media-empty">${icon("media")}<p>Media controls work on Windows.</p></div>`;
+    nowEl.innerHTML = `<div class="media-empty">${icon("media")}<p>${t("Media controls work on Windows.")}</p></div>`;
     return;
   }
   if (!state.hasSession) {
-    nowEl.innerHTML = `<div class="media-empty">${icon("media")}<p>Nothing is playing.</p><small>Start music in Spotify, a browser or any player.</small></div>`;
+    nowEl.innerHTML = `<div class="media-empty">${icon("media")}<p>${t("Nothing is playing.")}</p><small>${t("Start music in Spotify, a browser or any player.")}</small></div>`;
     return;
   }
 
@@ -169,23 +170,23 @@ export function render() {
       ${coverHtml(state.thumbnail, "cover")}
       <div class="media-info">
         <span class="media-source">${escapeHtml(prettySource(state.source))}</span>
-        <strong class="media-title">${escapeHtml(state.title || "Unknown title")}</strong>
+        <strong class="media-title">${escapeHtml(state.title || t("Unknown title"))}</strong>
         <span class="media-artist">${escapeHtml(state.artist || "")}</span>
         ${
           state.timeline?.durationMs > 0
             ? `<div class="media-progress">
                 <span class="t-now"></span>
-                <div class="track" title="Jump to"><div class="fill"></div></div>
+                <div class="track" title="${t("Jump to")}"><div class="fill"></div></div>
                 <span class="t-total"></span>
               </div>`
             : ""
         }
         <div class="media-controls">
-          <button class="icon-btn big" data-media="previous" title="Previous">${icon("previous")}</button>
-          ${canSkip() ? `<button class="icon-btn big" data-media="back" title="Back 15 seconds">${icon("back15")}</button>` : ""}
-          <button class="icon-btn big accent play" data-media="toggle" title="${state.playing ? "Pause" : "Play"}">${icon(state.playing ? "pause" : "play")}</button>
-          ${canSkip() ? `<button class="icon-btn big" data-media="forward" title="Forward 15 seconds">${icon("forward15")}</button>` : ""}
-          <button class="icon-btn big" data-media="next" title="Next">${icon("next")}</button>
+          <button class="icon-btn big" data-media="previous" title="${t("Previous")}">${icon("previous")}</button>
+          ${canSkip() ? `<button class="icon-btn big" data-media="back" title="${t("Back 15 seconds")}">${icon("back15")}</button>` : ""}
+          <button class="icon-btn big accent play" data-media="toggle" title="${t(state.playing ? "Pause" : "Play")}">${icon(state.playing ? "pause" : "play")}</button>
+          ${canSkip() ? `<button class="icon-btn big" data-media="forward" title="${t("Forward 15 seconds")}">${icon("forward15")}</button>` : ""}
+          <button class="icon-btn big" data-media="next" title="${t("Next")}">${icon("next")}</button>
         </div>
       </div>
     </div>`;

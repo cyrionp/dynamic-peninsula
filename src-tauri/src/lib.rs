@@ -62,6 +62,29 @@ struct LockItem(CheckMenuItem<Wry>);
 /// The tray's taskbar dock item, likewise.
 struct DockItem(CheckMenuItem<Wry>);
 
+/// The tray's plain items, kept so their labels can follow the language.
+struct TrayItems {
+    show: MenuItem<Wry>,
+    center: MenuItem<Wry>,
+    exit: MenuItem<Wry>,
+}
+
+/// Relabels the tray menu in the language picked in Settings. Keys are the
+/// item ids; unknown ones are ignored.
+#[tauri::command]
+fn set_tray_labels(labels: HashMap<String, String>, app: AppHandle) {
+    for (id, text) in &labels {
+        let _ = match id.as_str() {
+            "lock" => app.try_state::<LockItem>().map(|i| i.0.set_text(text)),
+            "dock" => app.try_state::<DockItem>().map(|i| i.0.set_text(text)),
+            "show" => app.try_state::<TrayItems>().map(|i| i.show.set_text(text)),
+            "center" => app.try_state::<TrayItems>().map(|i| i.center.set_text(text)),
+            "exit" => app.try_state::<TrayItems>().map(|i| i.exit.set_text(text)),
+            _ => None,
+        };
+    }
+}
+
 fn set_lock(app: &AppHandle, locked: bool) {
     app.state::<LockState>().0.store(locked, Ordering::Relaxed);
     if let Some(item) = app.try_state::<LockItem>() {
@@ -293,6 +316,7 @@ fn build_tray(app: &AppHandle) -> tauri::Result<()> {
     let menu = Menu::with_items(app, &[&show, &lock, &center, &dock, &exit])?;
     app.manage(LockItem(lock));
     app.manage(DockItem(dock));
+    app.manage(TrayItems { show, center, exit });
 
     let mut tray = TrayIconBuilder::with_id("main")
         .tooltip("Dynamic Peninsula")
@@ -352,6 +376,7 @@ pub fn run() {
             set_locked,
             set_lock_holes,
             set_dock_enabled,
+            set_tray_labels,
             dock_status,
             dock_layout,
             dock_open,
