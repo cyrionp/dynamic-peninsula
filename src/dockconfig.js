@@ -18,8 +18,6 @@ export const DOCK_DEFAULTS = {
   // Off until switched on: it's experimental.
   dock: false,
   dockLook: "windows",
-  // A running countdown gets its own pill, first, whatever else is showing.
-  dockApart: true,
   // Shown left to right, in this order.
   dockItems: [
     { id: "countdown", on: true },
