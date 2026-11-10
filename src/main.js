@@ -26,6 +26,7 @@ import { initNotes, renderNotes, initTodos, renderTodos } from "./lists.js";
 import { initAudio, noticeView, render as renderAudio } from "./audio.js";
 import { initLayout, getLook, isAboveDock, setAboveDock, showAboveDock, hideAboveDock } from "./layout.js";
 import { initIsland, paintIsland, isIsland } from "./island.js";
+import { checkOnLaunch, installUpdate, UPDATE_TEXT } from "./updates.js";
 
 const peninsula = document.getElementById("peninsula");
 const barLead = document.getElementById("bar-lead");
@@ -43,8 +44,14 @@ const toRect = (r) => ({ x: r.left, y: r.top, width: r.width, height: r.height }
 // Locked, only the bar's media buttons take clicks, and only if allowed.
 function lockHoles() {
   const { locked, lockMedia } = getLook();
+  // The update notice's buttons always work, or it could never be closed.
+  if (locked && state() === "update") return holesOf(updateAlert);
   if (!locked || !lockMedia || state() !== "collapsed") return [];
-  return [...barControls.querySelectorAll("button")]
+  return holesOf(barControls);
+}
+
+function holesOf(el) {
+  return [...el.querySelectorAll("button")]
     .map((b) => b.getBoundingClientRect())
     .filter((r) => r.width > 0 && r.height > 0)
     .map(toRect);
@@ -74,6 +81,7 @@ function setState(next) {
   syncTicker();
   paintBar(true);
   syncAboveDock();
+  reportHitRect();
 }
 
 /* ---------- with the taskbar dock: only shown while open ---------- */
@@ -82,7 +90,8 @@ function setState(next) {
 // never appears, not even while it folds away.
 function syncAboveDock() {
   if (!isAboveDock()) return;
-  if (state() === "expanded") showAboveDock();
+  // The update notice is the one thing that shows above the dock unasked.
+  if (state() === "expanded" || state() === "update") showAboveDock();
   else hideAboveDock();
 }
 
@@ -103,6 +112,8 @@ async function syncDockMode() {
     setState("collapsed");
   }
   if (isAboveDock() && state() === "collapsed") hideAboveDock();
+  // Folding away for the dock doesn't count as an answer to the update notice.
+  if (state() === "collapsed" && updateWaiting()) showUpdateNotice();
 }
 
 // Typing somewhere keeps the panel open even if the mouse wanders off;
@@ -119,7 +130,7 @@ peninsula.addEventListener("mouseover", (e) => {
   hovering = true;
   clearTimeout(closeTimer);
   if (e.target.closest("#bar-controls") || getLook().locked) return;
-  if (state() !== "alert") setState("expanded");
+  if (state() !== "alert" && state() !== "update") setState("expanded");
 });
 
 peninsula.addEventListener("mouseleave", () => {
@@ -423,6 +434,7 @@ function dismissAlert() {
   alertQueue.shift();
   if (alertQueue.length) return showAlert();
   peninsula.classList.remove("alert-anim");
+  if (updateWaiting()) return showUpdateNotice();
   setState(hovering ? "expanded" : "collapsed");
 }
 
@@ -432,6 +444,68 @@ document.getElementById("alert-restart").addEventListener("click", () => {
   if (current) countdowns.restart(current.id);
   dismissAlert();
   syncTicker();
+});
+
+/* ---------- a new version is out: say so until the user answers ---------- */
+
+// Unlike a countdown alert it doesn't close by itself: it stays until
+// Install or Later. Later hides it until the next launch; the dot on the
+// Settings tab and Settings → Updates keep offering it.
+const updateAlert = document.getElementById("update-alert");
+const updateBody = document.getElementById("update-body");
+const updateInstall = document.getElementById("update-install");
+const settingsTab = document.querySelector('.tab[data-page="settings"]');
+let updateInfo = { status: "idle" };
+let updateDismissed = false;
+
+const updateWaiting = () => !updateDismissed && (updateInfo.status === "available" || updateInfo.status === "installing");
+
+function onUpdateState(next) {
+  const was = updateInfo.status;
+  updateInfo = next;
+  settingsTab.classList.toggle("has-update", next.status === "available" || next.status === "installing");
+  paintUpdateNotice();
+  if (next.status === "available" && was !== "available" && was !== "installing") showUpdateNotice();
+  if (!updateWaiting() && state() === "update") closeUpdateNotice();
+}
+
+function paintUpdateNotice() {
+  document.getElementById("update-title").textContent = UPDATE_TEXT.noticeTitle;
+  const installing = updateInfo.status === "installing";
+  updateBody.textContent = installing
+    ? UPDATE_TEXT.noticeInstalling(updateInfo.progress ?? 0)
+    : updateInfo.failed
+      ? UPDATE_TEXT.installFailed(updateInfo.failed)
+      : UPDATE_TEXT.noticeBody(updateInfo.next ?? "");
+  updateBody.title = updateBody.textContent;
+  updateInstall.textContent = UPDATE_TEXT.noticeInstall;
+  updateInstall.disabled = installing;
+  const later = document.getElementById("update-later");
+  later.title = UPDATE_TEXT.noticeLater;
+  later.disabled = installing;
+}
+
+function showUpdateNotice() {
+  // A countdown that just ended goes first; this follows when it's dismissed.
+  if (state() === "alert" || !updateWaiting()) return;
+  clearTimeout(closeTimer);
+  document.activeElement?.blur();
+  paintUpdateNotice();
+  setState("update");
+  peninsula.classList.remove("alert-anim");
+  void peninsula.offsetWidth;
+  peninsula.classList.add("alert-anim");
+}
+
+function closeUpdateNotice() {
+  peninsula.classList.remove("alert-anim");
+  setState(hovering && !getLook().locked ? "expanded" : "collapsed");
+}
+
+updateInstall.addEventListener("click", () => installUpdate());
+document.getElementById("update-later").addEventListener("click", () => {
+  updateDismissed = true;
+  closeUpdateNotice();
 });
 
 /* ---------- taskbar dock: a click on it opens the peninsula ---------- */
@@ -451,7 +525,7 @@ function openFromDock(next) {
   }
   if (next) showPage(next);
   clearTimeout(closeTimer);
-  if (state() !== "alert") setState("expanded");
+  if (state() !== "alert" && state() !== "update") setState("expanded");
   closeTimer = setTimeout(() => {
     if (state() === "expanded" && !hovering && !isEditing()) setState("collapsed");
   }, DOCK_OPEN_MS);
@@ -486,7 +560,7 @@ function onSettingsChange(patch) {
 
 applyTheme();
 paintIcons();
-initSettings(onSettingsChange);
+initSettings(onSettingsChange, onUpdateState);
 initDock({
   enabled: getSettings().dock,
   onStatus() {
@@ -519,3 +593,4 @@ showPage(page);
 paintBar(true);
 scheduleClock();
 syncTicker();
+checkOnLaunch();

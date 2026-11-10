@@ -40,6 +40,7 @@ const line = {
   headphones: `<path d="M4 17v-4a8 8 0 0 1 16 0v4"/><rect x="3" y="14" width="4" height="7" rx="1.5"/><rect x="17" y="14" width="4" height="7" rx="1.5"/>`,
   speaker: `<rect x="5" y="2" width="14" height="20" rx="3"/><circle cx="12" cy="14" r="3.5"/><path d="M12 6.5h0"/>`,
   bolt: `<path d="M13 2L5 14h6l-1 8 8-12h-6z"/>`,
+  download: `<path d="M12 3v12M7 10l5 5 5-5"/><path d="M4 19h16"/>`,
 };
 
 const solid = {
@@ -70,6 +71,7 @@ const solid = {
   headphones: `<path d="M4 17v-4a8 8 0 0 1 16 0v4" fill="none" stroke="currentColor" stroke-width="2.4"/><rect x="2.5" y="13.5" width="5.5" height="8" rx="2"/><rect x="16" y="13.5" width="5.5" height="8" rx="2"/>`,
   speaker: `<path fill-rule="evenodd" d="M8 2h8a3 3 0 0 1 3 3v14a3 3 0 0 1-3 3H8a3 3 0 0 1-3-3V5a3 3 0 0 1 3-3zm4 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8zm0-5a1.3 1.3 0 1 0 0 2.6A1.3 1.3 0 0 0 12 5z"/>`,
   bolt: `<path d="M13.5 1.5L4 14.5h6.5l-1 8 9.5-13h-6.5z"/>`,
+  download: `<path d="M10.5 3h3v8.4l3.4-3.4 2.1 2.1-7 7-7-7 2.1-2.1 3.4 3.4z"/><rect x="4" y="18" width="16" height="3" rx="1.2"/>`,
 };
 
 let style = "line";
