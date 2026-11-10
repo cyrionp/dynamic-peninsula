@@ -125,7 +125,7 @@ function update(patch) {
   changed(patch);
 }
 
-export function initSettings(onChange) {
+export function initSettings(onChange, onUpdate) {
   changed = onChange;
   const page = document.getElementById("settings-page");
 
@@ -170,7 +170,6 @@ export function initSettings(onChange) {
       update({ smart: settings.smart.map((s) => (s.id === id ? { ...s, on: e.target.checked } : s)) });
     }
     if (e.target.id === "set-dock") update({ dock: e.target.checked });
-    if (e.target.id === "set-dock-apart") update({ dockApart: e.target.checked });
     if (e.target.dataset.dockToggle) {
       const id = e.target.dataset.dockToggle;
       update({ dockItems: settings.dockItems.map((s) => (s.id === id ? { ...s, on: e.target.checked } : s)) });
@@ -185,7 +184,7 @@ export function initSettings(onChange) {
   });
 
   render();
-  initUpdates();
+  initUpdates(onUpdate);
   loadAutostart();
 }
 
@@ -363,16 +362,8 @@ function dockGroup(group) {
     </div>
     <p class="hint">${lookHint}</p>
     <h3>${t("Shows")}</h3>
-    <label class="switch-row">
-      <span>${t("A running countdown stands apart, first")}</span>
-      <input type="checkbox" class="switch" id="set-dock-apart" ${settings.dockApart ? "checked" : ""} />
-    </label>
-    <p class="hint">${
-      settings.dockApart
-        ? t("Countdowns come before everything else, in a pill of their own, and never get cut short.")
-        : t("Countdowns take their place in the order below, like everything else.")
-    }</p>
-    ${orderList(settings.dockItems, DOCK_ITEMS, "dock")}`
+    ${orderList(settings.dockItems, DOCK_ITEMS, "dock")}
+    <p class="hint">${t("A running countdown is pinned on the left, just its time. Right of it the bar shows the first of the others that has something going on.")}</p>`
         : ""
     }`
   );

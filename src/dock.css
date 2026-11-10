@@ -197,7 +197,41 @@ body {
   border-radius: 1px;
 }
 
-/* ---------- the countdown pill: first, apart, never cut short ---------- */
+/* ---------- the bar: the peninsula's own, in its theme ---------- */
+
+.dk-bar {
+  /* The items inside take the peninsula theme's colours. */
+  --dk-fg: var(--fg);
+  --dk-muted: var(--muted);
+  --dk-hover: var(--surface-hover);
+  --dk-press: var(--surface);
+  --dk-accent: var(--accent);
+  --dk-accent-fg: var(--accent-fg);
+  --dk-indicator: var(--muted);
+  --dk-live: var(--live, var(--accent));
+  --item-h: calc(var(--tb-h) - 14px);
+  --item-r: min(var(--radius-sm), 8px);
+  --item-pad: 6px;
+  flex: 0 1 auto;
+  min-width: 0;
+  height: calc(var(--tb-h) - 8px);
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 0 4px;
+  color: var(--fg);
+  font-family: var(--font);
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: min(var(--radius), calc((var(--tb-h) - 8px) / 2));
+}
+
+.dk-bar .dk-btn {
+  width: calc(var(--item-h) - 4px);
+  height: calc(var(--item-h) - 4px);
+}
+
+/* ---------- the countdown pill: pinned on the left, never cut short ---------- */
 
 .dk-countdown .dk-icon {
   color: var(--dk-live);

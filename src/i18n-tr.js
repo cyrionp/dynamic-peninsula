@@ -144,11 +144,8 @@ export const TR = {
     "Görev çubuğuna uyar: açık ya da koyu görünümü ve vurgu rengin.",
   "Uses the peninsula's theme, toned down to sit on the taskbar.":
     "Peninsula'nın temasını, görev çubuğuna yakışacak şekilde yumuşatarak kullanır.",
-  "A running countdown stands apart, first": "Çalışan geri sayım ayrı ve en başta dursun",
-  "Countdowns come before everything else, in a pill of their own, and never get cut short.":
-    "Geri sayımlar her şeyden önce, kendi kutucuklarında gösterilir ve hiç kırpılmaz.",
-  "Countdowns take their place in the order below, like everything else.":
-    "Geri sayımlar da diğer her şey gibi aşağıdaki sırada yer alır.",
+  "A running countdown is pinned on the left, just its time. Right of it the bar shows the first of the others that has something going on.":
+    "Çalışan bir geri sayım en solda sabit durur, sadece kalan süresiyle. Sağında, diğerlerinden o an bir şey gösteren ilki barda görünür.",
   "music and its buttons": "müzik ve düğmeleri",
   Headphones: "Kulaklık",
   "earbud and headset battery": "kulaklık pil durumu",
@@ -195,6 +192,12 @@ export const TR = {
   "Version {version} is available.": "{version} sürümü çıktı.",
   "Downloading… {percent}%": "İndiriliyor… %{percent}",
   "Couldn't check for updates: {error}": "Güncellemeler kontrol edilemedi: {error}",
+  "Couldn't install the update: {error}": "Güncelleme kurulamadı: {error}",
+  "Update available": "Güncelleme var",
+  "Version {version} is ready": "{version} sürümü hazır",
+  Install: "Kur",
+  Later: "Sonra",
+  "Installing… {percent}%": "Kuruluyor… %{percent}",
 
   // Tray menu
   "Lock (click-through)": "Kilitle (tıklamalar geçsin)",

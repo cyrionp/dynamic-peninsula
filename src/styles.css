@@ -568,7 +568,8 @@ button {
   box-shadow: none;
 }
 
-.peninsula[data-state="alert"] {
+.peninsula[data-state="alert"],
+.peninsula[data-state="update"] {
   width: 380px;
   height: 64px;
 }
@@ -866,6 +867,20 @@ button {
 
 .icon-btn:active {
   transform: scale(0.92);
+}
+
+.mini.accent {
+  background: var(--accent);
+  border-color: transparent;
+  color: var(--accent-fg);
+}
+
+.mini.accent:hover {
+  background: color-mix(in srgb, var(--accent) 85%, var(--fg));
+}
+
+.mini:disabled {
+  opacity: 0.6;
 }
 
 .icon-btn.accent {
@@ -1904,14 +1919,36 @@ input[type="range"] {
   pointer-events: none;
 }
 
-.peninsula[data-state="alert"] .alert {
+.peninsula[data-state="alert"] #alert,
+.peninsula[data-state="update"] #update-alert {
   opacity: 1;
   pointer-events: auto;
   transition: opacity 0.2s ease 0.12s;
 }
 
-.peninsula[data-state="alert"] .bar {
+.peninsula[data-state="alert"] .bar,
+.peninsula[data-state="update"] .bar {
   opacity: 0;
+}
+
+.update-alert .mini {
+  flex: none;
+}
+
+/* Stays on the Settings tab until the update is installed. */
+.tab.has-update {
+  position: relative;
+}
+
+.tab.has-update::after {
+  content: "";
+  position: absolute;
+  top: 5px;
+  right: 6px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--accent);
 }
 
 .alert-bell {
