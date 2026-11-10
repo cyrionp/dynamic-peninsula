@@ -122,7 +122,7 @@ function update(patch) {
   changed(patch);
 }
 
-export function initSettings(onChange) {
+export function initSettings(onChange, onUpdate) {
   changed = onChange;
   const page = document.getElementById("settings-page");
 
@@ -179,7 +179,7 @@ export function initSettings(onChange) {
   });
 
   render();
-  initUpdates();
+  initUpdates(onUpdate);
   loadAutostart();
 }
 

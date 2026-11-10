@@ -32,6 +32,17 @@
           <button class="icon-btn" id="alert-dismiss" title="Dismiss" data-icon="close"></button>
         </div>
 
+        <!-- Shown when a newer version is out (checked at launch). -->
+        <div class="alert update-alert" id="update-alert">
+          <span class="alert-bell" data-icon="download"></span>
+          <div class="alert-text">
+            <small id="update-title"></small>
+            <strong id="update-body"></strong>
+          </div>
+          <button class="mini accent" id="update-install"></button>
+          <button class="icon-btn" id="update-later" data-icon="close"></button>
+        </div>
+
         <!-- Expanded: the panels -->
         <div class="panel">
           <nav class="tabs" id="tabs">

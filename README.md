@@ -81,8 +81,11 @@ Built with [Tauri 2](https://tauri.app): a Rust backend with a web frontend.
 
 Pushing a tag such as `v0.2.0` (or running it by hand) runs the Release workflow: it builds the
 Windows setup `.exe` with that version, signs it for the updater and publishes
-a GitHub Release with the installer and `latest.json`. The app's
-**Settings → Updates → Check now** reads that file from the latest release.
+a GitHub Release with the installer and `latest.json`. The app reads that file
+from the latest release a few seconds after it starts; when there is a newer
+version, the peninsula drops down (above the taskbar dock too, if it is on)
+with **Install** and **Later**, and the Settings tab keeps a dot until it is
+installed. **Settings → Updates → Check now** checks again by hand.
 
 One-time setup, since updates are signed:
 
