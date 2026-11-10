@@ -3,6 +3,7 @@
 import { load, save, newId } from "./store.js";
 import { icon } from "./icons.js";
 import { escapeHtml } from "./util.js";
+import { t } from "./i18n.js";
 
 let todos = load("todos", []);
 let todoList = null;
@@ -68,7 +69,7 @@ function paintPinButton() {
   const btn = document.getElementById("note-pin");
   const pinned = Boolean(openNoteData()?.pinned);
   btn.classList.toggle("is-on", pinned);
-  btn.title = pinned ? "Unpin" : "Pin to the top";
+  btn.title = t(pinned ? "Unpin" : "Pin to the top");
 }
 
 /* Dragging a card onto another moves it there, within its own group. */
@@ -184,7 +185,7 @@ export function initNotes() {
 export function renderNotes() {
   if (!noteGrid) return;
   if (notes.length === 0) {
-    noteGrid.innerHTML = `<li class="empty">No notes yet. Add one with “New note”.</li>`;
+    noteGrid.innerHTML = `<li class="empty">${t("No notes yet. Add one with “New note”.")}</li>`;
     return;
   }
   noteGrid.innerHTML = notes
@@ -194,8 +195,8 @@ export function renderNotes() {
         ${n.title.trim() ? `<strong class="note-card-title">${escapeHtml(n.title)}</strong>` : ""}
         <p class="note-card-text">${escapeHtml(n.text.trim() || "")}</p>
         <span class="note-card-tools">
-          <button class="icon-btn pin" data-act="pin" title="${n.pinned ? "Unpin" : "Pin to the top"}">${icon("pin")}</button>
-          <button class="icon-btn danger" data-act="delete" title="Delete note">${icon("close")}</button>
+          <button class="icon-btn pin" data-act="pin" title="${t(n.pinned ? "Unpin" : "Pin to the top")}">${icon("pin")}</button>
+          <button class="icon-btn danger" data-act="delete" title="${t("Delete note")}">${icon("close")}</button>
         </span>
       </li>`
     )
@@ -241,7 +242,7 @@ export function initTodos() {
 export function renderTodos() {
   if (!todoList) return;
   if (todos.length === 0) {
-    todoList.innerHTML = `<li class="empty">Nothing to do yet.</li>`;
+    todoList.innerHTML = `<li class="empty">${t("Nothing to do yet.")}</li>`;
     return;
   }
   todoList.innerHTML = todos
@@ -250,7 +251,7 @@ export function renderTodos() {
       <li class="todo ${t.done ? "done" : ""}" data-id="${t.id}">
         <label class="check"><input type="checkbox" ${t.done ? "checked" : ""} /><span></span></label>
         <span class="todo-text">${escapeHtml(t.text)}</span>
-        <button class="icon-btn danger" data-act="delete" title="Delete">${icon("close")}</button>
+        <button class="icon-btn danger" data-act="delete" title="${t("Delete")}">${icon("close")}</button>
       </li>`
     )
     .join("");

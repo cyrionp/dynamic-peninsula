@@ -7,6 +7,7 @@
 
 import { call, on, inTauri } from "./tauri.js";
 import { load, save } from "./store.js";
+import { t } from "./i18n.js";
 
 export const BAR_SIZES = [
   { id: "s", label: "Small", width: 180, height: 28, font: 12 },
@@ -318,30 +319,30 @@ function update(patch) {
 
 const chips = (list, key) =>
   list
-    .map((s) => `<button class="chip ${s.id === look[key] ? "is-active" : ""}" data-${key}-size="${s.id}">${s.label}</button>`)
+    .map((s) => `<button class="chip ${s.id === look[key] ? "is-active" : ""}" data-${key}-size="${s.id}">${t(s.label)}</button>`)
     .join("");
 
 /** Sizes and look, shown under Appearance. */
 function paintLook(box) {
   box.innerHTML = `
-    <h3>Bar size</h3>
+    <h3>${t("Bar size")}</h3>
     <div class="chips">${chips(BAR_SIZES, "bar")}</div>
 
-    <h3>Opens to</h3>
+    <h3>${t("Opens to")}</h3>
     <div class="chips">${chips(PANEL_SIZES, "panel")}</div>
 
-    <h3>Look</h3>
+    <h3>${t("Look")}</h3>
     <label class="switch-row">
-      <span>Minimal bar</span>
+      <span>${t("Minimal bar")}</span>
       <input type="checkbox" class="switch" id="set-minimal" ${look.minimal ? "checked" : ""} />
     </label>
     <div class="switch-row">
-      <span>Opacity</span>
+      <span>${t("Opacity")}</span>
       <input type="range" id="set-opacity" min="0.2" max="1" step="0.05" value="${look.opacity}" />
       <span class="range-value">${Math.round(look.opacity * 100)}%</span>
     </div>
     <label class="switch-row">
-      <span>Solid while open</span>
+      <span>${t("Solid while open")}</span>
       <input type="checkbox" class="switch" id="set-solid-open" ${look.solidOpen ? "checked" : ""} />
     </label>
   `;
@@ -351,18 +352,18 @@ function paintLook(box) {
 function paintPosition(box) {
   box.innerHTML = `
     <div class="switch-row">
-      <span>Drag the bar to move it anywhere</span>
-      <button class="mini" id="reset-position">Top center</button>
+      <span>${t("Drag the bar to move it anywhere")}</span>
+      <button class="mini" id="reset-position">${t("Top center")}</button>
     </div>
     <div class="switch-row">
-      <span>Lock: clicks go to the windows below</span>
-      <button class="mini" id="lock-now">Lock</button>
+      <span>${t("Lock: clicks go to the windows below")}</span>
+      <button class="mini" id="lock-now">${t("Lock")}</button>
     </div>
     <label class="switch-row">
-      <span>Media buttons still work while locked</span>
+      <span>${t("Media buttons still work while locked")}</span>
       <input type="checkbox" class="switch" id="set-lock-media" ${look.lockMedia ? "checked" : ""} />
     </label>
-    <p class="hint">Locked, it can't be moved or opened; with the switch on, play / pause, skip and the 15 s buttons on the bar still click. Unlock from the tray icon's menu.</p>
+    <p class="hint">${t("Locked, it can't be moved or opened; with the switch on, play / pause, skip and the 15 s buttons on the bar still click. Unlock from the tray icon's menu.")}</p>
   `;
 }
 

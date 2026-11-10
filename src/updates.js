@@ -4,25 +4,26 @@
 
 import { inTauri } from "./tauri.js";
 import { escapeHtml } from "./util.js";
+import { t } from "./i18n.js";
 
-// Every line the user can see, in one place so it can be translated.
+// Every line the user can see, in one place, in the current language.
 export const UPDATE_TEXT = {
-  checking: "Checking…",
-  latest: "You're on the latest version.",
-  available: (v) => `Version ${v} is available.`,
-  downloading: (p) => `Downloading… ${p}%`,
-  error: (m) => `Couldn't check for updates: ${m}`,
-  installFailed: (m) => `Couldn't install the update: ${m}`,
-  desktopOnly: "Updates work in the desktop app only.",
-  version: (v) => `Version ${v}`,
-  checkNow: "Check now",
-  install: "Install & restart",
+  get checking() { return t("Checking…"); },
+  get latest() { return t("You're on the latest version."); },
+  available: (v) => t("Version {version} is available.", { version: v }),
+  downloading: (p) => t("Downloading… {percent}%", { percent: p }),
+  error: (m) => t("Couldn't check for updates: {error}", { error: m }),
+  installFailed: (m) => t("Couldn't install the update: {error}", { error: m }),
+  get desktopOnly() { return t("Updates work in the desktop app only."); },
+  version: (v) => t("Version {version}", { version: v }),
+  get checkNow() { return t("Check now"); },
+  get install() { return t("Install & restart"); },
   // The notice on the peninsula.
-  noticeTitle: "Update available",
-  noticeBody: (v) => `Version ${v} is ready`,
-  noticeInstall: "Install",
-  noticeLater: "Later",
-  noticeInstalling: (p) => `Installing… ${p}%`,
+  get noticeTitle() { return t("Update available"); },
+  noticeBody: (v) => t("Version {version} is ready", { version: v }),
+  get noticeInstall() { return t("Install"); },
+  get noticeLater() { return t("Later"); },
+  noticeInstalling: (p) => t("Installing… {percent}%", { percent: p }),
 };
 
 // Give the network a moment after sign-in before the first check, and try a

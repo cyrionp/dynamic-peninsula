@@ -7,6 +7,7 @@
 import { load, save, newId } from "./store.js";
 import { icon } from "./icons.js";
 import { escapeHtml, formatRemaining } from "./util.js";
+import { t } from "./i18n.js";
 
 let items = load("countdowns", []);
 let listEl = null;
@@ -100,9 +101,9 @@ function subtitle(cd) {
   if (cd.mode === "until") {
     const end = new Date(cd.endsAt);
     const tomorrow = end.toDateString() !== new Date().toDateString();
-    return `until ${cd.untilTime}${tomorrow && cd.running ? " tomorrow" : ""}`;
+    return t(tomorrow && cd.running ? "until {time} tomorrow" : "until {time}", { time: cd.untilTime });
   }
-  return `${formatRemaining(cd.durationMs)} timer`;
+  return t("{time} timer", { time: formatRemaining(cd.durationMs) });
 }
 
 export function initCountdowns(onChange) {
@@ -120,7 +121,7 @@ export function initCountdowns(onChange) {
 
   form.addEventListener("submit", (e) => {
     e.preventDefault();
-    const name = form.elements.name.value.trim() || `Countdown ${items.length + 1}`;
+    const name = form.elements.name.value.trim() || t("Countdown {n}", { n: items.length + 1 });
     const cd = { id: newId(), name, mode };
 
     if (mode === "until") {
@@ -205,7 +206,7 @@ export function initCountdowns(onChange) {
 export function render() {
   if (!listEl) return;
   if (items.length === 0) {
-    listEl.innerHTML = `<li class="empty">No countdowns yet. Set a length or a time above.</li>`;
+    listEl.innerHTML = `<li class="empty">${t("No countdowns yet. Set a length or a time above.")}</li>`;
     return;
   }
   const now = Date.now();
@@ -215,20 +216,20 @@ export function render() {
       const toggle =
         cd.mode === "until" && !cd.done
           ? ""
-          : `<button class="icon-btn accent" data-act="toggle" title="${cd.running ? "Pause" : "Start"}">${icon(cd.running ? "pause" : "play")}</button>`;
+          : `<button class="icon-btn accent" data-act="toggle" title="${t(cd.running ? "Pause" : "Start")}">${icon(cd.running ? "pause" : "play")}</button>`;
       return `
       <li class="item cd ${cd.running ? "is-running" : ""} ${cd.done ? "is-done" : ""}" data-id="${cd.id}">
         <div class="item-main">
           <div class="name-row">
-            <input class="name" value="${escapeHtml(cd.name)}" placeholder="Name" spellcheck="false" />
+            <input class="name" value="${escapeHtml(cd.name)}" placeholder="${t("Name")}" spellcheck="false" />
             <span class="sub">${icon(cd.mode === "until" ? "clock" : "countdown")}${escapeHtml(subtitle(cd))}</span>
           </div>
-          <span class="time">${cd.done ? "Done" : formatRemaining(remaining(cd, now))}</span>
+          <span class="time">${cd.done ? t("Done") : formatRemaining(remaining(cd, now))}</span>
           <div class="progress"><span style="transform: scaleX(${progress(cd, now)})"></span></div>
         </div>
         ${toggle}
-        <button class="icon-btn" data-act="reset" title="${cd.mode === "until" ? "Restart" : "Reset"}">${icon("reset")}</button>
-        <button class="icon-btn danger" data-act="delete" title="Delete">${icon("close")}</button>
+        <button class="icon-btn" data-act="reset" title="${t(cd.mode === "until" ? "Restart" : "Reset")}">${icon("reset")}</button>
+        <button class="icon-btn danger" data-act="delete" title="${t("Delete")}">${icon("close")}</button>
       </li>`;
     })
     .join("");

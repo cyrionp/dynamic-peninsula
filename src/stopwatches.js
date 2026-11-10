@@ -4,6 +4,7 @@
 import { load, save, newId } from "./store.js";
 import { icon } from "./icons.js";
 import { escapeHtml, formatElapsed } from "./util.js";
+import { t } from "./i18n.js";
 
 let items = load("stopwatches", []);
 let listEl = null;
@@ -33,7 +34,7 @@ export function initStopwatches(onChange) {
   document.getElementById("add-sw").addEventListener("click", () => {
     items.push({
       id: newId(),
-      name: `Stopwatch ${items.length + 1}`,
+      name: t("Stopwatch {n}", { n: items.length + 1 }),
       running: false,
       accumulated: 0,
       startedAt: 0,
@@ -95,7 +96,7 @@ export function initStopwatches(onChange) {
 
 export function render() {
   if (items.length === 0) {
-    listEl.innerHTML = `<li class="empty">No stopwatches yet. Add one and give it a name.</li>`;
+    listEl.innerHTML = `<li class="empty">${t("No stopwatches yet. Add one and give it a name.")}</li>`;
     return;
   }
   listEl.innerHTML = items
@@ -103,12 +104,12 @@ export function render() {
       (sw) => `
       <li class="item ${sw.running ? "is-running" : ""}" data-id="${sw.id}">
         <div class="item-main">
-          <input class="name" value="${escapeHtml(sw.name)}" placeholder="Name" spellcheck="false" />
+          <input class="name" value="${escapeHtml(sw.name)}" placeholder="${t("Name")}" spellcheck="false" />
           <span class="time">${formatElapsed(elapsed(sw))}</span>
         </div>
-        <button class="icon-btn accent" data-act="toggle" title="${sw.running ? "Pause" : "Start"}">${icon(sw.running ? "pause" : "play")}</button>
-        <button class="icon-btn" data-act="reset" title="Reset">${icon("reset")}</button>
-        <button class="icon-btn danger" data-act="delete" title="Delete">${icon("close")}</button>
+        <button class="icon-btn accent" data-act="toggle" title="${t(sw.running ? "Pause" : "Start")}">${icon(sw.running ? "pause" : "play")}</button>
+        <button class="icon-btn" data-act="reset" title="${t("Reset")}">${icon("reset")}</button>
+        <button class="icon-btn danger" data-act="delete" title="${t("Delete")}">${icon("close")}</button>
       </li>`
     )
     .join("");

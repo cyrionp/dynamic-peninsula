@@ -27,6 +27,7 @@ import { initAudio, noticeView, render as renderAudio } from "./audio.js";
 import { initLayout, getLook, isAboveDock, setAboveDock, showAboveDock, hideAboveDock } from "./layout.js";
 import { initIsland, paintIsland, isIsland } from "./island.js";
 import { checkOnLaunch, installUpdate, UPDATE_TEXT } from "./updates.js";
+import { t, setLang, locale, translatePage } from "./i18n.js";
 
 const peninsula = document.getElementById("peninsula");
 const barLead = document.getElementById("bar-lead");
@@ -171,7 +172,7 @@ function clockView() {
   const { bar, clock24 } = getSettings();
   const time = formatClock(now, clock24);
   if (bar === "date") {
-    const day = now.toLocaleDateString([], { weekday: "short", day: "numeric", month: "short" });
+    const day = now.toLocaleDateString(locale(), { weekday: "short", day: "numeric", month: "short" });
     return { kind: "clock", lead: "dot", text: day, value: time };
   }
   return { kind: "clock", lead: "dot", text: "", value: time };
@@ -249,7 +250,7 @@ document.getElementById("bar").addEventListener(
 
 function volumeView() {
   const { level, muted } = volumeShown;
-  return { kind: "volume", lead: muted ? "mute" : "volume", text: muted ? "Muted" : "Volume", value: `${Math.round(level * 100)}%` };
+  return { kind: "volume", lead: muted ? "mute" : "volume", text: t(muted ? "Muted" : "Volume"), value: `${Math.round(level * 100)}%` };
 }
 
 function barView() {
@@ -333,11 +334,11 @@ function paintControls(force) {
   const button = (action, name, title) =>
     `<button class="bar-btn" data-media="${action}" title="${title}">${icon(name)}</button>`;
   barControls.innerHTML = show
-    ? button("previous", "previous", "Previous") +
-      (skip ? button("back", "back15", "Back 15 seconds") : "") +
-      button("toggle", media().playing ? "pause" : "play", media().playing ? "Pause" : "Play") +
-      (skip ? button("forward", "forward15", "Forward 15 seconds") : "") +
-      button("next", "next", "Next")
+    ? button("previous", "previous", t("Previous")) +
+      (skip ? button("back", "back15", t("Back 15 seconds")) : "") +
+      button("toggle", media().playing ? "pause" : "play", t(media().playing ? "Pause" : "Play")) +
+      (skip ? button("forward", "forward15", t("Forward 15 seconds")) : "") +
+      button("next", "next", t("Next"))
     : "";
 }
 
@@ -543,7 +544,12 @@ function onSettingsChange(patch) {
     syncDock(patch.dock);
     syncDockMode();
   }
-  if ("theme" in patch || "mode" in patch) {
+  const relabel = "lang" in patch && setLang(patch.lang);
+  if (relabel) {
+    applyLanguage();
+    paintUpdateNotice();
+  }
+  if (relabel || "theme" in patch || "mode" in patch) {
     applyTheme();
     paintIcons();
     // Lists embed icons, so redraw them in the new style.
@@ -558,6 +564,25 @@ function onSettingsChange(patch) {
   paintBar(true);
 }
 
+/* ---------- language ---------- */
+
+// The tray menu lives in Rust; it gets its labels from here.
+const TRAY_LABELS = {
+  show: "Show",
+  lock: "Lock (click-through)",
+  center: "Move to top center",
+  dock: "Taskbar dock (experimental)",
+  exit: "Exit",
+};
+
+function applyLanguage() {
+  translatePage();
+  const labels = Object.fromEntries(Object.entries(TRAY_LABELS).map(([id, text]) => [id, t(text)]));
+  call("set_tray_labels", { labels }).catch(() => {});
+}
+
+setLang(getSettings().lang);
+applyLanguage();
 applyTheme();
 paintIcons();
 initSettings(onSettingsChange, onUpdateState);

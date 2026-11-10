@@ -14,6 +14,7 @@ import { escapeHtml, formatRemaining, formatElapsedShort } from "./util.js";
 import { coverHtml, guardCovers, prettySource } from "./media.js";
 import { DOCK_DEFAULTS, normaliseDockItems } from "./dockconfig.js";
 import appIcon from "./app-icon.png";
+import { t, setLang, getLang } from "./i18n.js";
 
 const root = document.documentElement;
 const dock = document.getElementById("dock");
@@ -41,6 +42,7 @@ function readStore() {
   settings = { ...DOCK_DEFAULTS, theme: "lagoon", mode: "dark", ...saved, dockItems: normaliseDockItems(saved.dockItems) };
   countdowns = load("countdowns", []);
   stopwatches = load("stopwatches", []);
+  setLang(settings.lang);
   applyLook();
 }
 
@@ -142,8 +144,10 @@ function views(now) {
 
 // `off`: shown but greyed out (a player that doesn't say where the track is
 // can't be jumped back or forward).
-const button = (action, name, title, off = false) =>
-  `<button class="dk-btn" data-media="${action}" title="${off ? `${title} (this player doesn't allow it)` : title}" aria-label="${title}" ${off ? "disabled" : ""}>${icon(name)}</button>`;
+const button = (action, name, label, off = false) => {
+  const title = t(label);
+  return `<button class="dk-btn" data-media="${action}" title="${off ? t("{action} (this player doesn't allow it)", { action: title }) : title}" aria-label="${title}" ${off ? "disabled" : ""}>${icon(name)}</button>`;
+};
 
 // Every item but the countdown pill carries data-slot: when the taskbar
 // leaves too little room, slots are dropped from the end (see fit()).
@@ -152,7 +156,7 @@ function itemHtml(v, apart = false) {
   switch (v.kind) {
     case "countdown":
       return `<button ${slot} class="dk-item dk-countdown ${apart ? "is-apart" : ""} ${v.urgent ? "is-urgent" : ""} ${v.ringing ? "is-ringing" : ""}"
-          ${v.ringing ? `data-quiet="${v.id}"` : `data-open="countdowns"`} title="${v.ringing ? "Click to silence" : escapeHtml(v.name)}">
+          ${v.ringing ? `data-quiet="${v.id}"` : `data-open="countdowns"`} title="${v.ringing ? t("Click to silence") : escapeHtml(v.name)}">
           <span class="dk-icon">${icon(v.ringing ? "bell" : "countdown")}</span>
           <span class="dk-time" data-time="countdown">${v.time}</span>
           ${v.more > 0 ? `<span class="dk-badge">+${v.more}</span>` : ""}
@@ -179,7 +183,7 @@ function itemHtml(v, apart = false) {
     case "idle":
       // Nothing going on: the app's own button, so the dock is always
       // there to be found, and opens the peninsula.
-      return `<button class="dk-item dk-idle" data-open="" title="Open Dynamic Peninsula" aria-label="Open Dynamic Peninsula">
+      return `<button class="dk-item dk-idle" data-open="" title="${t("Open Dynamic Peninsula")}" aria-label="${t("Open Dynamic Peninsula")}">
           <img class="dk-app" src="${appIcon}" alt="" />
         </button>`;
     case "headphones":
@@ -203,7 +207,7 @@ function paint() {
   const now = Date.now();
   const { apart, items: shown } = views(now);
   const items = apart || shown.length ? shown : [{ kind: "idle" }];
-  const key = [root.dataset.dockLook, root.dataset.theme, root.dataset.mode, keyOf(apart), ...items.map(keyOf)].join("|");
+  const key = [getLang(), root.dataset.dockLook, root.dataset.theme, root.dataset.mode, keyOf(apart), ...items.map(keyOf)].join("|");
   if (key !== lastKey) {
     lastKey = key;
     const bar = items.length && items[0].kind !== "idle";
