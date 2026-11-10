@@ -247,10 +247,11 @@ export function renderTodos() {
   }
   todoList.innerHTML = todos
     .map(
-      (t) => `
-      <li class="todo ${t.done ? "done" : ""}" data-id="${t.id}">
-        <label class="check"><input type="checkbox" ${t.done ? "checked" : ""} /><span></span></label>
-        <span class="todo-text">${escapeHtml(t.text)}</span>
+      // Not `t`: that name is the translation function used below.
+      (todo) => `
+      <li class="todo ${todo.done ? "done" : ""}" data-id="${todo.id}">
+        <label class="check"><input type="checkbox" ${todo.done ? "checked" : ""} /><span></span></label>
+        <span class="todo-text">${escapeHtml(todo.text)}</span>
         <button class="icon-btn danger" data-act="delete" title="${t("Delete")}">${icon("close")}</button>
       </li>`
     )
